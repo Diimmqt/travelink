@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-feature-settings: "calt" 0, "liga" 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-feature-settings: "calt" 0, "liga" 0;
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    /* Brex Typography Negative Tracking Utilities */
+    .tracking-brex-72 {
+        letter-spacing: -0.03em;
+    }
+    .tracking-brex-48 {
+        letter-spacing: -0.025em;
+    }
+    .tracking-brex-36 {
+        letter-spacing: -0.02em;
+    }
+    .tracking-brex-24 {
+        letter-spacing: -0.01em;
+    }
+
+    /* Hero headline - weight 600, up to 72px, line-height 1.0 */
+    .brex-hero-headline {
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        line-height: 1.0;
+        color: #000000;
+    }
+
+    /* Section heading - weight 600, line-height 1.1 */
+    .brex-section-heading {
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        line-height: 1.1;
+        color: #000000;
+    }
+
+    /* Body paragraph - weight 400, 16px, line-height 1.5, left-aligned, max-w ~640px */
+    .brex-body {
+        font-weight: 400;
+        font-size: 1rem;
+        line-height: 1.5;
+        letter-spacing: -0.01em;
+        color: #60646c;
+        text-align: left;
+        max-width: 640px;
+    }
+}
+
+@layer components {
+    /* Brex Card — white bg, 1px Mist border, 12px radius, NO shadow */
+    .brex-card {
+        background-color: #ffffff;
+        border: 1px solid #b9bbc6;
+        border-radius: 12px;
+        box-shadow: none;
+    }
+
+    /* Brex Alternate Section — Fog background */
+    .brex-section-fog {
+        background-color: #f3f3f7;
+    }
+
+    /* Brex Primary CTA Button — Ember orange fill, white text weight 600, 12px radius */
+    .brex-btn-ember {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: #ff5900;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.875rem;
+        letter-spacing: -0.01em;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background-color 0.15s ease, opacity 0.15s ease;
+    }
+    .brex-btn-ember:hover {
+        background-color: #e04e00;
+    }
+    .brex-btn-ember:active {
+        opacity: 0.9;
+    }
+
+    /* Brex Secondary Button — White / light fog bg, 1px Mist border, Ink text, 12px radius */
+    .brex-btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: #ffffff;
+        color: #000000;
+        font-weight: 500;
+        font-size: 0.875rem;
+        letter-spacing: -0.01em;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        border: 1px solid #b9bbc6;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .brex-btn-secondary:hover {
+        background-color: #f3f3f7;
+        border-color: #000000;
+    }
+
+    /* Brex Input — White bg, 1px Mist border, 12px radius */
+    .brex-input {
+        background-color: #ffffff;
+        border: 1px solid #b9bbc6;
+        border-radius: 12px;
+        color: #000000;
+        font-size: 0.875rem;
+        letter-spacing: -0.01em;
+        padding: 0.625rem 0.875rem;
+        width: 100%;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .brex-input:focus {
+        border-color: #ff5900;
+        box-shadow: 0 0 0 2px rgba(255, 89, 0, 0.15);
+    }
+    .brex-input::placeholder {
+        color: #8b8d98;
+    }
+
+    /* Standalone Ember Link (not inline inside body paragraph) */
+    .brex-link-ember {
+        color: #ff5900;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        text-decoration: none;
+        transition: opacity 0.15s ease;
+    }
+    .brex-link-ember:hover {
+        opacity: 0.85;
+        text-decoration: underline;
+    }
+}
