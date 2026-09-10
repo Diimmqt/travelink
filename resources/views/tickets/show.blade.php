@@ -84,7 +84,7 @@
 
         @media (min-width: 640px) {
             .pass-card {
-                grid-template-columns: 1fr auto 1fr;
+                grid-template-columns: 1fr auto 240px;
             }
         }
 
@@ -247,7 +247,7 @@
 
         /* ── Right panel (QR stub) ───────────────────────── */
         .pass-right {
-            padding: 1.75rem 1.75rem;
+            padding: 1.75rem 1.25rem;
             background: #fafbff;
             display: flex;
             flex-direction: column;
@@ -255,25 +255,68 @@
             justify-content: center;
             text-align: center;
             gap: 0.875rem;
+            width: 100%;
             min-width: 0;
+            box-sizing: border-box;
         }
         @media (min-width: 640px) {
             .pass-right {
-                min-width: 192px;
-                max-width: 220px;
+                width: 240px;
             }
         }
 
         .qr-box {
             background: #fff;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            display: inline-flex;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 156px;
+            height: 156px;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         .qr-box svg, .qr-box img {
+            width: 136px !important;
+            height: 136px !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
             display: block;
+            margin: auto;
+        }
+
+        .qr-locked-box {
+            width: 156px;
+            height: 156px;
+            border-radius: 14px;
+            border: 2px dashed #fcd34d;
+            background: #fffdf5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .qr-locked-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #fef3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qr-locked-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #b45309;
         }
 
         .qr-title {
@@ -397,7 +440,7 @@
                     <div class="status-alert paid print:hidden">
                         <div class="flex items-center gap-2">
                             <span class="status-dot green"></span>
-                            <span>Pembayaran Berhasil! Tiket Anda aktif dan siap digunakan untuk boarding.</span>
+                            <span>Pembayaran berhasil! Tiket Anda aktif dan siap digunakan untuk boarding.</span>
                         </div>
                         <form action="{{ route('tickets.refund', $ticket) }}" method="POST"
                               onsubmit="return confirm('Apakah Anda yakin ingin mengajukan refund/reschedule untuk tiket ini?')">
@@ -412,8 +455,13 @@
                     </div>
                 @elseif($ticket->status === 'pending')
                     <div class="status-alert pending print:hidden">
-                        <span class="status-dot amber"></span>
-                        <span>Menunggu konfirmasi pembayaran. Selesaikan pembayaran Anda di Midtrans.</span>
+                        <div class="flex items-center gap-2">
+                            <span class="status-dot amber"></span>
+                            <span>Menunggu konfirmasi pembayaran. Selesaikan pembayaran anda.</span>
+                        </div>
+                        <a href="{{ route('tickets.show', $ticket->id) }}" class="btn-refund" style="border-color:#fcd34d; color:#b45309; background:#fff;">
+                            Cek Status Pembayaran
+                        </a>
                     </div>
                 @elseif(in_array($ticket->status, ['expired','refunded']))
                     <div class="status-alert expired print:hidden">
@@ -505,12 +553,26 @@
 
                     {{-- ── RIGHT: QR stub ── --}}
                     <div class="pass-right">
-                        <div class="qr-box">
-                            {!! $qrCode !!}
-                        </div>
-                        <div class="qr-title">Boarding QR Code</div>
-                        <p class="qr-hint">Pindai kode QR ini saat menaiki armada di titik penjemputan.</p>
-                        <span class="qr-token">{{ strtoupper(substr($ticket->qr_token, 0, 8)) }}</span>
+                        @if(in_array($ticket->status, ['paid', 'boarded']) && $qrCode)
+                            <div class="qr-box">
+                                {!! $qrCode !!}
+                            </div>
+                            <div class="qr-title">Boarding QR Code</div>
+                            <p class="qr-hint">Pindai kode QR ini saat menaiki armada di titik penjemputan.</p>
+                            <span class="qr-token">{{ strtoupper(substr($ticket->qr_token, 0, 8)) }}</span>
+                        @else
+                            <div class="qr-locked-box">
+                                <div class="qr-locked-icon">
+                                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                </div>
+                                <span class="qr-locked-badge">QR Code Terkunci</span>
+                            </div>
+                            <div class="qr-title text-amber-800">Menunggu Pembayaran</div>
+                            <p class="qr-hint">QR Code boarding pass akan otomatis muncul setelah pembayaran berhasil diverifikasi.</p>
+                            <span class="qr-token" style="color: #94a3b8; background: #f8fafc; border-color: #e2e8f0; letter-spacing: 0.25em;">••••••••</span>
+                        @endif
                     </div>
 
                 </div>{{-- end .pass-card --}}
@@ -523,13 +585,15 @@
                         </svg>
                         Riwayat Pemesanan
                     </a>
-                    <button onclick="window.print()" class="btn-print">
-                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                        </svg>
-                        Cetak Boarding Pass
-                    </button>
+                    @if(in_array($ticket->status, ['paid', 'boarded']))
+                        <button onclick="window.print()" class="btn-print">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                            Cetak Boarding Pass
+                        </button>
+                    @endif
                 </div>
 
             </div>{{-- end .boarding-pass-container --}}

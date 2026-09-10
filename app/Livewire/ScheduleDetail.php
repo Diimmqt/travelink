@@ -17,13 +17,40 @@ class ScheduleDetail extends Component
     public function mount(Schedule $schedule)
     {
         $this->schedule = $schedule->load(['route.pickupPoints', 'vehicle']);
+
+        // Auto-select if only 1 option exists
+        $jemput = $this->schedule->route?->pickupPoints?->where('tipe', 'jemput');
+        if ($jemput && $jemput->count() === 1) {
+            $this->pickup_point_id = $jemput->first()->id;
+        }
+
+        $turun = $this->schedule->route?->pickupPoints?->where('tipe', 'turun');
+        if ($turun && $turun->count() === 1) {
+            $this->dropoff_point_id = $turun->first()->id;
+        }
     }
 
     public function selectSeat($seatId)
     {
+        $route = $this->schedule->route;
+        $hasPickup = $route && $route->pickupPoints->where('tipe', 'jemput')->isNotEmpty();
+        $hasDropoff = $route && $route->pickupPoints->where('tipe', 'turun')->isNotEmpty();
+
+        // If only 1 point exists, auto-assign
+        if ($hasPickup && empty($this->pickup_point_id)) {
+            $this->pickup_point_id = $route->pickupPoints->where('tipe', 'jemput')->first()->id;
+        }
+        if ($hasDropoff && empty($this->dropoff_point_id)) {
+            $this->dropoff_point_id = $route->pickupPoints->where('tipe', 'turun')->first()->id;
+        }
+
         // Validation
-        if (empty($this->pickup_point_id) || empty($this->dropoff_point_id)) {
-            session()->flash('error', 'Silakan pilih titik jemput dan titik turun terlebih dahulu.');
+        if ($hasPickup && empty($this->pickup_point_id)) {
+            session()->flash('error', 'Silakan pilih titik jemput terlebih dahulu.');
+            return;
+        }
+        if ($hasDropoff && empty($this->dropoff_point_id)) {
+            session()->flash('error', 'Silakan pilih titik turun terlebih dahulu.');
             return;
         }
 
@@ -87,7 +114,7 @@ class ScheduleDetail extends Component
             });
 
             // Redirect ke halaman passenger form
-            return redirect()->route('booking.passenger');
+            return $this->redirectRoute('booking.passenger', navigate: true);
             
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());

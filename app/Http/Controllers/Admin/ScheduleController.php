@@ -44,23 +44,35 @@ class ScheduleController extends Controller
             'vehicle_id' => 'required|exists:vehicles,id',
             'waktu_berangkat' => 'required|date|after:now',
             'status' => 'required|in:scheduled,ongoing,completed,cancelled',
+        ], [
+            'waktu_berangkat.after' => 'Waktu keberangkatan harus setelah waktu saat ini.',
         ]);
+
+        $route = Route::with('pickupPoints')->findOrFail($request->route_id);
+        $hasPickup = $route->pickupPoints->where('tipe', 'jemput')->isNotEmpty();
+        $hasDropoff = $route->pickupPoints->where('tipe', 'turun')->isNotEmpty();
+
+        if (!$hasPickup || !$hasDropoff) {
+            return back()->withInput()->withErrors([
+                'route_id' => 'Rute ini belum memiliki titik jemput dan titik turun lengkap. Silakan lengkapi titik jemput & turun di menu Titik Penjemputan terlebih dahulu agar penumpang dapat memesan tiket.'
+            ]);
+        }
 
         DB::transaction(function () use ($validated) {
             $schedule = Schedule::create($validated);
             $vehicle = Vehicle::findOrFail($schedule->vehicle_id);
 
-            // AUTOMATICALLY GENERATE SEATS CORRESPONDING TO VEHICLE'S CAPACITY
+            // AUTOMATICALLY GENERATE SEATS CORRESPONDING TO VEHICLE'S CAPACITY (Format: A1, A2, ...)
             for ($i = 1; $i <= $vehicle->kapasitas_kursi; $i++) {
                 Seat::create([
                     'schedule_id' => $schedule->id,
-                    'nomor_kursi' => (string) $i,
+                    'nomor_kursi' => 'A' . $i,
                     'status' => 'available',
                 ]);
             }
         });
 
-        return redirect()->route('admin.schedules.index')->with('success', 'Jadwal keberangkatan baru dan seluruh kursi armada berhasil dibuat.');
+        return redirect()->route('admin.schedules.index')->with('success', 'Jadwal keberangkatan baru dan seluruh kursi armada (' . $route->kota_asal . ' - ' . $route->kota_tujuan . ') berhasil dibuat.');
     }
 
     public function edit(Schedule $schedule)

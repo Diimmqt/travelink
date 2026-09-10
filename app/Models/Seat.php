@@ -10,6 +10,9 @@ class Seat extends Model
     use HasFactory;
 
     protected $guarded = [];
+    protected $casts = [
+        'locked_until' => 'datetime',
+    ];
 
     public function schedule()
     {

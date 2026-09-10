@@ -12,8 +12,50 @@ class TicketController extends Controller
     public function show(Ticket $ticket)
     {
         // Pastikan user hanya bisa lihat tiket sendiri (atau admin)
-        if ($ticket->user_id !== Auth::id()) {
+        if ($ticket->user_id !== Auth::id() && Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke tiket ini.');
+        }
+
+        // Jika status masih pending, coba sinkronkan status dengan Midtrans atau query params dari redirect
+        if ($ticket->status === 'pending') {
+            $queryTrxStatus = request()->query('transaction_status');
+            $statusCode     = request()->query('status_code');
+
+            if ($queryTrxStatus === 'settlement' || $queryTrxStatus === 'capture' || $statusCode === '200') {
+                $ticket->update(['status' => 'paid']);
+                $ticket->seat?->update(['status' => 'booked', 'locked_until' => null]);
+                $ticket->transaction?->update(['status' => 'success']);
+                $ticket->refresh();
+            } else {
+                try {
+                    $transaction = $ticket->transaction;
+                    if ($transaction && $transaction->idempotency_key) {
+                        \Midtrans\Config::$serverKey = config('midtrans.server_key');
+                        \Midtrans\Config::$isProduction = config('midtrans.is_production');
+
+                        $res = \Midtrans\Transaction::status($transaction->idempotency_key);
+                        $trxStatus = is_object($res) ? ($res->transaction_status ?? null) : ($res['transaction_status'] ?? null);
+                        $fraudStatus = is_object($res) ? ($res->fraud_status ?? null) : ($res['fraud_status'] ?? null);
+
+                        if ($trxStatus === 'settlement' || ($trxStatus === 'capture' && $fraudStatus === 'accept')) {
+                            $ticket->update(['status' => 'paid']);
+                            $ticket->seat?->update(['status' => 'booked', 'locked_until' => null]);
+                            $transaction->update([
+                                'status' => 'success',
+                                'payment_method' => is_object($res) ? ($res->payment_type ?? null) : ($res['payment_type'] ?? null),
+                            ]);
+                            $ticket->refresh();
+                        } elseif (in_array($trxStatus, ['deny', 'expire', 'cancel'])) {
+                            $ticket->update(['status' => 'expired']);
+                            $ticket->seat?->update(['status' => 'available', 'locked_until' => null]);
+                            $transaction->update(['status' => 'failed']);
+                            $ticket->refresh();
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore sync error in offline/local mock
+                }
+            }
         }
 
         $ticket->load([
@@ -23,13 +65,18 @@ class TicketController extends Controller
             'pickupPoint',
             'dropoffPoint',
             'user',
+            'transaction',
         ]);
 
-        // Generate QR code sebagai SVG string (tidak butuh ext-gd)
-        $qrCode = QrCode::format('svg')
-            ->size(250)
-            ->errorCorrection('H')
-            ->generate($ticket->qr_token);
+        // Generate QR code sebagai SVG string hanya jika pembayaran sudah berhasil
+        $qrCode = null;
+        if (in_array($ticket->status, ['paid', 'boarded'])) {
+            $qrCode = QrCode::format('svg')
+                ->size(140)
+                ->margin(0)
+                ->errorCorrection('M')
+                ->generate($ticket->qr_token);
+        }
 
         return view('tickets.show', compact('ticket', 'qrCode'));
     }

@@ -157,20 +157,20 @@
                             </div>
 
                             <div class="flex items-center gap-2 text-sm font-medium text-brex-ink">
-                                <span>{{ $schedule->route->kota_asal }}</span>
+                                <span>{{ $schedule->route->kota_asal ?? '-' }}</span>
                                 <svg class="w-3.5 h-3.5 text-brex-graphite shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                                 </svg>
-                                <span>{{ $schedule->route->kota_tujuan }}</span>
+                                <span>{{ $schedule->route->kota_tujuan ?? '-' }}</span>
                             </div>
 
                             <div class="flex items-center gap-3 text-xs text-brex-pewter">
-                                <span>±{{ $schedule->route->estimasi_durasi_menit }} mnt</span>
+                                <span>±{{ $schedule->route->estimasi_durasi_menit ?? '120' }} mnt</span>
                                 <span>·</span>
-                                <span>{{ $schedule->vehicle->jenis }}</span>
+                                <span>{{ $schedule->vehicle->jenis ?? 'Shuttle' }}</span>
                                 <span>·</span>
-                                <span class="{{ $schedule->sisa_kursi <= 3 ? 'text-red-600 font-semibold' : 'text-emerald-600 font-semibold' }}">
-                                    Sisa {{ $schedule->sisa_kursi }} kursi
+                                <span class="{{ ($schedule->sisa_kursi ?? 0) <= 3 ? 'text-red-600 font-semibold' : 'text-emerald-600 font-semibold' }}">
+                                    Sisa {{ $schedule->sisa_kursi ?? 0 }} kursi
                                 </span>
                             </div>
                         </div>
@@ -180,7 +180,7 @@
                             <div class="text-right">
                                 <span class="text-xs text-brex-pewter block">per kursi</span>
                                 <span class="text-base font-semibold text-brex-ink tracking-brex-24">
-                                    Rp {{ number_format($schedule->route->harga, 0, ',', '.') }}
+                                    Rp {{ number_format($schedule->route->harga ?? 0, 0, ',', '.') }}
                                 </span>
                             </div>
 

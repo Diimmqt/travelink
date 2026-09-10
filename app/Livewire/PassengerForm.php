@@ -27,14 +27,19 @@ class PassengerForm extends Component
 
         $this->schedule = Schedule::with(['route', 'vehicle'])->find($this->bookingData['schedule_id']);
         $this->seat = Seat::find($this->bookingData['seat_id']);
-        $this->pickup = PickupPoint::find($this->bookingData['pickup_point_id']);
-        $this->dropoff = PickupPoint::find($this->bookingData['dropoff_point_id']);
+        $this->pickup = !empty($this->bookingData['pickup_point_id']) ? PickupPoint::find($this->bookingData['pickup_point_id']) : null;
+        $this->dropoff = !empty($this->bookingData['dropoff_point_id']) ? PickupPoint::find($this->bookingData['dropoff_point_id']) : null;
         
+        if (!$this->schedule || !$this->seat) {
+            session()->forget('booking');
+            return $this->redirectRoute('schedules.search', navigate: true);
+        }
+
         // Ensure seat is still locked for this session
-        if ($this->seat->status !== 'locked' || $this->seat->locked_until < now()) {
+        if ($this->seat->status !== 'locked' || ($this->seat->locked_until && $this->seat->locked_until < now())) {
             session()->forget('booking');
             session()->flash('error', 'Waktu pemilihan kursi habis. Silakan pilih kembali.');
-            return redirect()->route('schedules.detail', $this->schedule->id);
+            return $this->redirectRoute('schedules.detail', ['schedule' => $this->schedule->id], navigate: true);
         }
     }
 
@@ -45,10 +50,10 @@ class PassengerForm extends Component
         ]);
 
         // Cek lagi apakah lock masih valid
-        if ($this->seat->status !== 'locked' || $this->seat->locked_until < now()) {
+        if ($this->seat->status !== 'locked' || ($this->seat->locked_until && $this->seat->locked_until < now())) {
             session()->forget('booking');
             session()->flash('error', 'Waktu pemilihan kursi habis. Silakan pilih kembali.');
-            return redirect()->route('schedules.detail', $this->schedule->id);
+            return $this->redirectRoute('schedules.detail', ['schedule' => $this->schedule->id], navigate: true);
         }
 
         // Update session dgn nama penumpang

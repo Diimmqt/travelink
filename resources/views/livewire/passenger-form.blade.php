@@ -52,13 +52,13 @@
                     </div>
                     <div class="col-span-2 pt-2 border-t border-brex-mist">
                         <span class="block uppercase tracking-wider mb-0.5 text-brex-pewter font-medium">Titik Jemput (Naik)</span>
-                        <span class="font-semibold text-brex-ink">{{ $pickup->nama_titik }}</span>
-                        <span class="block mt-0.5 text-xs text-brex-graphite">{{ $pickup->alamat }}</span>
+                        <span class="font-semibold text-brex-ink">{{ $pickup->nama_titik ?? ('Pool ' . $schedule->route->kota_asal) }}</span>
+                        <span class="block mt-0.5 text-xs text-brex-graphite">{{ $pickup->alamat ?? 'Lokasi pool utama kota asal' }}</span>
                     </div>
                     <div class="col-span-2">
                         <span class="block uppercase tracking-wider mb-0.5 text-brex-pewter font-medium">Titik Turun</span>
-                        <span class="font-semibold text-brex-ink">{{ $dropoff->nama_titik }}</span>
-                        <span class="block mt-0.5 text-xs text-brex-graphite">{{ $dropoff->alamat }}</span>
+                        <span class="font-semibold text-brex-ink">{{ $dropoff->nama_titik ?? ('Pool ' . $schedule->route->kota_tujuan) }}</span>
+                        <span class="block mt-0.5 text-xs text-brex-graphite">{{ $dropoff->alamat ?? 'Lokasi pool utama kota tujuan' }}</span>
                     </div>
                 </div>
             </div>

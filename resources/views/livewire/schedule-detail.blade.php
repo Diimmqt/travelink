@@ -74,7 +74,7 @@
                     <span class="text-xs font-semibold uppercase tracking-widest block text-brex-pewter">Titik Penjemputan (Naik)</span>
                     
                     <div class="grid grid-cols-1 gap-2.5">
-                        @foreach($pickupPoints as $point)
+                        @forelse($pickupPoints as $point)
                             @php $isSelected = $pickup_point_id == $point->id; @endphp
                             <div wire:click="$set('pickup_point_id', {{ $point->id }})"
                                 class="cursor-pointer p-4 rounded-brex transition-all duration-150 flex items-start gap-3.5 group {{ $isSelected ? 'bg-brex-fog border-2 border-brex-ink' : 'bg-white border border-brex-mist hover:border-brex-graphite' }}">
@@ -90,7 +90,11 @@
                                     <p class="text-xs mt-0.5 leading-relaxed text-brex-graphite">{{ $point->alamat }}</p>
                                 </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <div class="p-3.5 rounded-brex bg-brex-fog border border-brex-mist text-xs text-brex-graphite">
+                                Pool Keberangkatan: <strong class="text-brex-ink">{{ $schedule->route->kota_asal }}</strong>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 
@@ -101,7 +105,7 @@
                     <span class="text-xs font-semibold uppercase tracking-widest block text-brex-pewter">Titik Penurunan (Turun)</span>
 
                     <div class="grid grid-cols-1 gap-2.5">
-                        @foreach($dropoffPoints as $point)
+                        @forelse($dropoffPoints as $point)
                             @php $isSelected = $dropoff_point_id == $point->id; @endphp
                             <div wire:click="$set('dropoff_point_id', {{ $point->id }})"
                                 class="cursor-pointer p-4 rounded-brex transition-all duration-150 flex items-start gap-3.5 group {{ $isSelected ? 'bg-brex-fog border-2 border-brex-ink' : 'bg-white border border-brex-mist hover:border-brex-graphite' }}">
@@ -117,7 +121,11 @@
                                     <p class="text-xs mt-0.5 leading-relaxed text-brex-graphite">{{ $point->alamat }}</p>
                                 </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <div class="p-3.5 rounded-brex bg-brex-fog border border-brex-mist text-xs text-brex-graphite">
+                                Pool Tujuan: <strong class="text-brex-ink">{{ $schedule->route->kota_tujuan }}</strong>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 
@@ -163,35 +171,54 @@
 
                 <!-- Programmatic seating map grid -->
                 @php
+                $findSeat = function($num) use ($seats) {
+                    return $seats->first(function($s) use ($num) {
+                        return $s->nomor_kursi === 'A' . $num || $s->nomor_kursi === (string)$num;
+                    });
+                };
+
                 $rows = [];
-                if ($seats->count() == 15) {
+                $count = $seats->count();
+
+                if ($count <= 15) {
                     $rows = [
-                        ['type' => 'front', 'left' => $seats->where('nomor_kursi', 'A1')->first(), 'right' => 'supir'],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A2')->first(), $seats->where('nomor_kursi', 'A3')->first()], 'right' => [$seats->where('nomor_kursi', 'A4')->first()]],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A5')->first(), $seats->where('nomor_kursi', 'A6')->first()], 'right' => [$seats->where('nomor_kursi', 'A7')->first()]],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A8')->first(), $seats->where('nomor_kursi', 'A9')->first()], 'right' => [$seats->where('nomor_kursi', 'A10')->first()]],
-                        ['type' => 'back', 'seats' => [
-                            $seats->where('nomor_kursi', 'A11')->first(),
-                            $seats->where('nomor_kursi', 'A12')->first(),
-                            $seats->where('nomor_kursi', 'A13')->first(),
-                            $seats->where('nomor_kursi', 'A14')->first(),
-                            $seats->where('nomor_kursi', 'A15')->first(),
-                        ]]
+                        ['type' => 'front', 'left' => $findSeat(1), 'right' => 'supir'],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(2), $findSeat(3)]), 'right' => array_filter([$findSeat(4)])],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(5), $findSeat(6)]), 'right' => array_filter([$findSeat(7)])],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(8), $findSeat(9)]), 'right' => array_filter([$findSeat(10)])],
+                        ['type' => 'back', 'seats' => array_filter([$findSeat(11), $findSeat(12), $findSeat(13), $findSeat(14), $findSeat(15)])]
+                    ];
+                } elseif ($count <= 19) {
+                    $rows = [
+                        ['type' => 'front', 'left' => $findSeat(1), 'right' => 'supir'],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(2), $findSeat(3)]), 'right' => array_filter([$findSeat(4)])],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(5), $findSeat(6)]), 'right' => array_filter([$findSeat(7)])],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(8), $findSeat(9)]), 'right' => array_filter([$findSeat(10)])],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(11), $findSeat(12)]), 'right' => array_filter([$findSeat(13)])],
+                        ['type' => 'row', 'left' => array_filter([$findSeat(14), $findSeat(15)]), 'right' => array_filter([$findSeat(16)])],
+                        ['type' => 'back', 'seats' => array_filter([$findSeat(17), $findSeat(18), $findSeat(19)])]
                     ];
                 } else {
                     $rows = [
-                        ['type' => 'front', 'left' => $seats->where('nomor_kursi', 'A1')->first(), 'right' => 'supir'],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A2')->first(), $seats->where('nomor_kursi', 'A3')->first()], 'right' => [$seats->where('nomor_kursi', 'A4')->first()]],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A5')->first(), $seats->where('nomor_kursi', 'A6')->first()], 'right' => [$seats->where('nomor_kursi', 'A7')->first()]],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A8')->first(), $seats->where('nomor_kursi', 'A9')->first()], 'right' => [$seats->where('nomor_kursi', 'A10')->first()]],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A11')->first(), $seats->where('nomor_kursi', 'A12')->first()], 'right' => [$seats->where('nomor_kursi', 'A13')->first()]],
-                        ['type' => 'row', 'left' => [$seats->where('nomor_kursi', 'A14')->first(), $seats->where('nomor_kursi', 'A15')->first()], 'right' => [$seats->where('nomor_kursi', 'A16')->first()]],
-                        ['type' => 'back', 'seats' => [
-                            $seats->where('nomor_kursi', 'A17')->first(),
-                            $seats->where('nomor_kursi', 'A18')->first(),
-                            $seats->where('nomor_kursi', 'A19')->first(),
-                        ]]
+                        ['type' => 'front', 'left' => $findSeat(1), 'right' => 'supir']
                     ];
+                    $current = 2;
+                    while ($current <= $count - 4) {
+                        $rows[] = [
+                            'type' => 'row',
+                            'left' => array_filter([$findSeat($current), $findSeat($current + 1)]),
+                            'right' => array_filter([$findSeat($current + 2)])
+                        ];
+                        $current += 3;
+                    }
+                    $backSeats = [];
+                    for ($k = $current; $k <= $count; $k++) {
+                        $s = $findSeat($k);
+                        if ($s) $backSeats[] = $s;
+                    }
+                    if (!empty($backSeats)) {
+                        $rows[] = ['type' => 'back', 'seats' => $backSeats];
+                    }
                 }
                 @endphp
 
@@ -202,7 +229,7 @@
                             <!-- Front row -->
                             <div class="grid grid-cols-4 gap-2.5 items-center">
                                 <div class="col-span-2">
-                                    @if($row['left'])
+                                    @if(!empty($row['left']))
                                         @include('livewire.partials.seat-button', ['seat' => $row['left']])
                                     @endif
                                 </div>
