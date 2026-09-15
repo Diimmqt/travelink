@@ -79,6 +79,11 @@ class CheckoutController extends Controller
                         'status'           => 'pending',
                         'idempotency_key'  => 'TRX-' . strtoupper(Str::random(16)),
                     ]);
+                } else {
+                    // Selalu perbarui idempotency_key saat retry agar Midtrans menerima order_id baru
+                    $transaction->update([
+                        'idempotency_key' => 'TRX-' . strtoupper(Str::random(16)),
+                    ]);
                 }
                 $token = $midtrans->createSnapToken($transaction, $existingTicket);
                 $ticketId = $existingTicket->id;

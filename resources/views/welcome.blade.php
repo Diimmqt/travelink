@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Travelink') }} - Shuttle Travel Antar Kota Nyaman &amp; Cepat</title>
-    <meta name="description" content="Pesan tiket shuttle travel antar kota secara online. Pilih kursi sendiri, titik jemput terdekat, armada Toyota Hiace eksekutif. Booking mudah di Travelink.">
+    <meta name="description" content="Pesan tiket shuttle travel antar kota secara cepat,tepat dan amanah.Booking mudah di Travelink.">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -176,17 +176,7 @@
                         Tinggalkan antrean terminal. Pilih lokasi pool terdekat, tentukan nomor kursi favorit Anda, dan nikmati armada Toyota Hiace eksekutif tepat waktu.
                     </p>
 
-                    <!-- Primary Action area when logged in -->
-                    @auth
-                    <div class="flex items-center gap-4 pt-2">
-                        <a href="#booking-panel" class="brex-btn-ember py-3 px-6 text-base">
-                            Cari Perjalanan Sekarang
-                        </a>
-                        <a href="{{ route('tickets.history') }}" class="brex-btn-secondary py-3 px-6 text-base">
-                            Tiket Saya
-                        </a>
-                    </div>
-                    @endauth
+
 
                     <!-- Highlights feature list -->
                     <div class="grid grid-cols-2 gap-4 pt-4 border-t border-brex-mist">

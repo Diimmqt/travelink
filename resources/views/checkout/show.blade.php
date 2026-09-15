@@ -199,7 +199,9 @@
                         if (window.snap && typeof window.snap.pay === 'function') {
                             window.snap.pay(data.snap_token, {
                                 onSuccess: function (result) {
-                                    window.location.href = '/tickets/' + data.ticket_id;
+                                    const trxStatus = (result && result.transaction_status) ? result.transaction_status : 'settlement';
+                                    const statusCode = (result && result.status_code) ? result.status_code : '200';
+                                    window.location.href = '/tickets/' + data.ticket_id + '?transaction_status=' + encodeURIComponent(trxStatus) + '&status_code=' + encodeURIComponent(statusCode);
                                 },
                                 onPending: function (result) {
                                     window.location.href = '/tickets/' + data.ticket_id;
@@ -210,6 +212,7 @@
                                 },
                                 onClose: function () {
                                     setLoading(false);
+                                    window.location.href = '{{ route('checkout.show') }}';
                                 }
                             });
                         } else {

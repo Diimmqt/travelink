@@ -32,6 +32,10 @@ class TicketController extends Controller
                     if ($transaction && $transaction->idempotency_key) {
                         \Midtrans\Config::$serverKey = config('midtrans.server_key');
                         \Midtrans\Config::$isProduction = config('midtrans.is_production');
+                        \Midtrans\Config::$curlOptions = [
+                            CURLOPT_TIMEOUT => 5,
+                            CURLOPT_CONNECTTIMEOUT => 4,
+                        ];
 
                         $res = \Midtrans\Transaction::status($transaction->idempotency_key);
                         $trxStatus = is_object($res) ? ($res->transaction_status ?? null) : ($res['transaction_status'] ?? null);

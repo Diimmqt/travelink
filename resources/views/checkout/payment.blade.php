@@ -31,7 +31,9 @@
         document.getElementById('pay-btn').addEventListener('click', function () {
             window.snap.pay(snapToken, {
                 onSuccess: function (result) {
-                    window.location.href = '/tickets/' + ticketId;
+                    const trxStatus = (result && result.transaction_status) ? result.transaction_status : 'settlement';
+                    const statusCode = (result && result.status_code) ? result.status_code : '200';
+                    window.location.href = '/tickets/' + ticketId + '?transaction_status=' + encodeURIComponent(trxStatus) + '&status_code=' + encodeURIComponent(statusCode);
                 },
                 onPending: function (result) {
                     alert('Pembayaran pending. Kami akan mengirim konfirmasi setelah pembayaran diterima.');
@@ -42,7 +44,7 @@
                     window.location.href = '/schedules';
                 },
                 onClose: function () {
-                    // User menutup popup tanpa bayar
+                    window.location.href = '{{ route('checkout.show') }}';
                 }
             });
         });
