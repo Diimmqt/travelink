@@ -11,23 +11,50 @@
 
     <!-- Scan / Input Form Card -->
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
-        <form action="{{ route('admin.boarding.validate') }}" method="POST" class="space-y-4">
+        <form id="boarding-form" action="{{ route('admin.boarding.validate') }}" method="POST" class="space-y-4">
             @csrf
             <div>
-                <label for="qr_token" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">
-                    QR Token E-Ticket
-                </label>
+                <div class="flex items-center justify-between mb-2">
+                    <label for="qr_token" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider">
+                        Kode Unik / QR Token E-Ticket
+                    </label>
+                    <button type="button" id="btn-toggle-camera"
+                        class="text-xs font-semibold text-brex-ember hover:text-[#e04f00] flex items-center gap-1.5 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span id="btn-camera-text">Scan dengan Kamera</span>
+                    </button>
+                </div>
+
+                <!-- Interactive Camera Viewfinder Box -->
+                <div id="camera-box" class="hidden mb-4 p-4 bg-brex-fog border border-dashed border-brex-mist rounded-brex text-center">
+                    <div class="max-w-xs mx-auto overflow-hidden rounded-brex border border-brex-mist bg-black relative">
+                        <div id="qr-reader" style="width: 100%;"></div>
+                    </div>
+                    <p class="text-xs text-brex-pewter mt-2">Arahkan kamera ke QR Code boarding pass tiket penumpang.</p>
+                </div>
+
                 <div class="flex flex-col sm:flex-row gap-3">
                     <input type="text" name="qr_token" id="qr_token" required autofocus autocomplete="off"
-                        placeholder="Tempelkan atau scan kode QR Token (cth: uuid...)"
-                        class="flex-1 bg-brex-paper border border-brex-mist rounded-brex px-4 py-3 text-brex-ink text-base focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel font-mono">
-                    <button type="submit" class="px-8 py-3 bg-brex-ember text-white font-medium text-base rounded-brex hover:bg-[#e04f00] transition duration-150 shadow-none flex items-center justify-center gap-2">
+                        placeholder="Contoh: 487C2BA8 atau scan QR Code..."
+                        class="flex-1 bg-brex-paper border border-brex-mist rounded-brex px-4 py-3 text-brex-ink text-base focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel font-mono uppercase">
+                    <button type="submit" class="px-8 py-3 bg-brex-ember text-white font-medium text-base rounded-brex hover:bg-[#e04f00] transition duration-150 shadow-none flex items-center justify-center gap-2 shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <span>Validasi</span>
                     </button>
                 </div>
+
+                <p class="text-xs text-brex-pewter mt-2.5 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-brex-steel shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Masukkan <strong>8 karakter kode unik</strong> yang ada di bawah QR tiket (contoh: <span class="font-mono text-brex-ink font-semibold">487C2BA8</span>), barcode scanner gun, atau klik tombol kamera.</span>
+                </p>
+
                 @error('qr_token')
                     <p class="text-xs text-rose-600 mt-2">{{ $message }}</p>
                 @enderror
@@ -155,4 +182,61 @@
         </div>
     </div>
 </div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+    let html5QrCode = null;
+    let cameraActive = false;
+    const btnToggle = document.getElementById('btn-toggle-camera');
+    const btnText = document.getElementById('btn-camera-text');
+    const cameraBox = document.getElementById('camera-box');
+    const qrInput = document.getElementById('qr_token');
+    const form = document.getElementById('boarding-form');
+
+    btnToggle.addEventListener('click', function () {
+        if (!cameraActive) {
+            startCamera();
+        } else {
+            stopCamera();
+        }
+    });
+
+    function startCamera() {
+        cameraBox.classList.remove('hidden');
+        btnText.innerText = 'Tutup Kamera';
+        cameraActive = true;
+
+        html5QrCode = new Html5Qrcode("qr-reader");
+        const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                // Success scan
+                qrInput.value = decodedText;
+                stopCamera();
+                form.submit();
+            },
+            (errorMessage) => {
+                // Scanning frame parse error (ignored during scan)
+            }
+        ).catch((err) => {
+            alert('Tidak dapat mengakses kamera: ' + err);
+            stopCamera();
+        });
+    }
+
+    function stopCamera() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                html5QrCode = null;
+            }).catch(() => {});
+        }
+        cameraBox.classList.add('hidden');
+        btnText.innerText = 'Scan dengan Kamera';
+        cameraActive = false;
+    }
+</script>
 @endsection
