@@ -29,7 +29,7 @@
                         <th class="py-3.5 px-6">Kota Tujuan</th>
                         <th class="py-3.5 px-6">Harga Tiket</th>
                         <th class="py-3.5 px-6">Estimasi Durasi</th>
-                        <th class="py-3.5 px-6">Jumlah Titik Jemput</th>
+                        <th class="py-3.5 px-6">Total Jadwal</th>
                         <th class="py-3.5 px-6 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -43,7 +43,7 @@
                             <td class="py-4 px-6">{{ $route->estimasi_durasi_menit }} menit</td>
                             <td class="py-4 px-6">
                                 <span class="px-2.5 py-1 text-xs font-medium bg-brex-fog text-brex-ink border border-brex-mist rounded-brex-chip">
-                                    {{ $route->pickup_points_count }} Titik
+                                    {{ $route->schedules_count }} Jadwal
                                 </span>
                             </td>
                             <td class="py-4 px-6 text-right space-x-2">

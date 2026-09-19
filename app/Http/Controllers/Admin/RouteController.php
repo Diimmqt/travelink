@@ -10,7 +10,7 @@ class RouteController extends Controller
 {
     public function index()
     {
-        $routes = Route::withCount(['schedules', 'pickupPoints'])->paginate(10);
+        $routes = Route::withCount('schedules')->paginate(10);
         return view('admin.routes.index', compact('routes'));
     }
 

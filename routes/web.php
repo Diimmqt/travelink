@@ -17,17 +17,16 @@ Route::get('/', function () {
         $q->where('status', 'scheduled');
     }])->get();
 
-    $pickupPointsByCity = \App\Models\PickupPoint::where('tipe', 'jemput')
-        ->with('route')
+    $pickupPointsByCity = \App\Models\PickupPoint::whereIn('tipe', ['jemput', 'keduanya'])
         ->get()
         ->groupBy(function ($point) {
-            return $point->route->kota_asal ?? 'Lainnya';
+            return $point->kota ?? ($point->route->kota_asal ?? 'Lainnya');
         });
 
     $stats = [
         'routes_count' => \App\Models\Route::count(),
         'vehicles_count' => \App\Models\Vehicle::count(),
-        'points_count' => \App\Models\PickupPoint::where('tipe', 'jemput')->count(),
+        'points_count' => \App\Models\PickupPoint::whereIn('tipe', ['jemput', 'keduanya'])->count(),
         'schedules_count' => \App\Models\Schedule::where('status', 'scheduled')->count(),
     ];
 

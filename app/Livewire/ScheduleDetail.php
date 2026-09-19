@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use App\Models\PickupPoint;
 use App\Models\Schedule;
 use App\Models\Seat;
 use App\Models\Ticket;
@@ -14,17 +15,35 @@ class ScheduleDetail extends Component
     public $pickup_point_id = '';
     public $dropoff_point_id = '';
 
+    public function getJemputPointsProperty()
+    {
+        $kotaAsal = $this->schedule->route->kota_asal ?? '';
+        return PickupPoint::where(function($q) use ($kotaAsal) {
+            $q->where('kota', $kotaAsal)
+              ->orWhere('route_id', $this->schedule->route_id);
+        })->whereIn('tipe', ['jemput', 'keduanya'])->orderBy('nama_titik')->get();
+    }
+
+    public function getTurunPointsProperty()
+    {
+        $kotaTujuan = $this->schedule->route->kota_tujuan ?? '';
+        return PickupPoint::where(function($q) use ($kotaTujuan) {
+            $q->where('kota', $kotaTujuan)
+              ->orWhere('route_id', $this->schedule->route_id);
+        })->whereIn('tipe', ['turun', 'keduanya'])->orderBy('nama_titik')->get();
+    }
+
     public function mount(Schedule $schedule)
     {
-        $this->schedule = $schedule->load(['route.pickupPoints', 'vehicle']);
+        $this->schedule = $schedule->load(['route', 'vehicle']);
 
         // Auto-select if only 1 option exists
-        $jemput = $this->schedule->route?->pickupPoints?->where('tipe', 'jemput');
+        $jemput = $this->jemputPoints;
         if ($jemput && $jemput->count() === 1) {
             $this->pickup_point_id = $jemput->first()->id;
         }
 
-        $turun = $this->schedule->route?->pickupPoints?->where('tipe', 'turun');
+        $turun = $this->turunPoints;
         if ($turun && $turun->count() === 1) {
             $this->dropoff_point_id = $turun->first()->id;
         }
@@ -32,16 +51,18 @@ class ScheduleDetail extends Component
 
     public function selectSeat($seatId)
     {
-        $route = $this->schedule->route;
-        $hasPickup = $route && $route->pickupPoints->where('tipe', 'jemput')->isNotEmpty();
-        $hasDropoff = $route && $route->pickupPoints->where('tipe', 'turun')->isNotEmpty();
+        $jemput = $this->jemputPoints;
+        $turun = $this->turunPoints;
+
+        $hasPickup = $jemput->isNotEmpty();
+        $hasDropoff = $turun->isNotEmpty();
 
         // If only 1 point exists, auto-assign
         if ($hasPickup && empty($this->pickup_point_id)) {
-            $this->pickup_point_id = $route->pickupPoints->where('tipe', 'jemput')->first()->id;
+            $this->pickup_point_id = $jemput->first()->id;
         }
         if ($hasDropoff && empty($this->dropoff_point_id)) {
-            $this->dropoff_point_id = $route->pickupPoints->where('tipe', 'turun')->first()->id;
+            $this->dropoff_point_id = $turun->first()->id;
         }
 
         // Validation
@@ -129,15 +150,12 @@ class ScheduleDetail extends Component
             ->where('created_at', '<', now()->subMinutes(10))
             ->update(['status' => 'expired']);
 
-        $pickupPoints = $this->schedule->route->pickupPoints->where('tipe', 'jemput');
-        $dropoffPoints = $this->schedule->route->pickupPoints->where('tipe', 'turun');
-        
         // Dapatkan data kursi terbaru
         $seats = $this->schedule->seats()->orderBy('id')->get();
 
         return view('livewire.schedule-detail', [
-            'pickupPoints' => $pickupPoints,
-            'dropoffPoints' => $dropoffPoints,
+            'pickupPoints' => $this->jemputPoints,
+            'dropoffPoints' => $this->turunPoints,
             'seats' => $seats,
         ])->layout('layouts.app');
     }

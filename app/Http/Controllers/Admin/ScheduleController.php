@@ -48,13 +48,23 @@ class ScheduleController extends Controller
             'waktu_berangkat.after' => 'Waktu keberangkatan harus setelah waktu saat ini.',
         ]);
 
-        $route = Route::with('pickupPoints')->findOrFail($request->route_id);
-        $hasPickup = $route->pickupPoints->where('tipe', 'jemput')->isNotEmpty();
-        $hasDropoff = $route->pickupPoints->where('tipe', 'turun')->isNotEmpty();
+        $route = Route::findOrFail($request->route_id);
+        $hasPickup = \App\Models\PickupPoint::where(function($q) use ($route) {
+            $q->where('kota', $route->kota_asal)
+              ->orWhere('route_id', $route->id);
+        })->whereIn('tipe', ['jemput', 'keduanya'])->exists();
+
+        $hasDropoff = \App\Models\PickupPoint::where(function($q) use ($route) {
+            $q->where('kota', $route->kota_tujuan)
+              ->orWhere('route_id', $route->id);
+        })->whereIn('tipe', ['turun', 'keduanya'])->exists();
 
         if (!$hasPickup || !$hasDropoff) {
+            $missing = [];
+            if (!$hasPickup) $missing[] = "titik jemput di {$route->kota_asal}";
+            if (!$hasDropoff) $missing[] = "titik turun di {$route->kota_tujuan}";
             return back()->withInput()->withErrors([
-                'route_id' => 'Rute ini belum memiliki titik jemput dan titik turun lengkap. Silakan lengkapi titik jemput & turun di menu Titik Penjemputan terlebih dahulu agar penumpang dapat memesan tiket.'
+                'route_id' => 'Belum tersedia ' . implode(' dan ', $missing) . '. Silakan tambahkan di menu Titik Jemput/Turun.'
             ]);
         }
 

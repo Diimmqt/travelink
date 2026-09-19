@@ -11,35 +11,55 @@ class PickupPointController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PickupPoint::with('route');
+        $query = PickupPoint::query();
 
-        if ($request->has('route_id') && $request->route_id != '') {
-            $query->where('route_id', $request->route_id);
+        if ($request->filled('kota')) {
+            $query->where('kota', $request->kota);
         }
 
-        if ($request->has('tipe') && $request->tipe != '') {
-            $query->where('tipe', $request->tipe);
+        if ($request->filled('tipe')) {
+            $query->where(function($q) use ($request) {
+                $q->where('tipe', $request->tipe)
+                  ->orWhere('tipe', 'keduanya');
+            });
         }
 
-        $pickupPoints = $query->paginate(15)->withQueryString();
-        $routes = Route::all();
+        $pickupPoints = $query->orderBy('kota')->orderBy('nama_titik')->paginate(15)->withQueryString();
 
-        return view('admin.pickup_points.index', compact('pickupPoints', 'routes'));
+        // Get list of all distinct cities
+        $cities = Route::select('kota_asal as kota')
+            ->union(Route::select('kota_tujuan as kota'))
+            ->union(PickupPoint::select('kota')->whereNotNull('kota'))
+            ->pluck('kota')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return view('admin.pickup_points.index', compact('pickupPoints', 'cities'));
     }
 
     public function create()
     {
-        $routes = Route::all();
-        return view('admin.pickup_points.create', compact('routes'));
+        $cities = Route::select('kota_asal as kota')
+            ->union(Route::select('kota_tujuan as kota'))
+            ->union(PickupPoint::select('kota')->whereNotNull('kota'))
+            ->pluck('kota')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return view('admin.pickup_points.create', compact('cities'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'route_id' => 'required|exists:routes,id',
+            'kota' => 'required|string|max:100',
             'nama_titik' => 'required|string|max:150',
             'alamat' => 'required|string',
-            'tipe' => 'required|in:jemput,turun',
+            'tipe' => 'required|in:jemput,turun,keduanya',
         ]);
 
         PickupPoint::create($validated);
@@ -49,17 +69,25 @@ class PickupPointController extends Controller
 
     public function edit(PickupPoint $pickupPoint)
     {
-        $routes = Route::all();
-        return view('admin.pickup_points.edit', compact('pickupPoint', 'routes'));
+        $cities = Route::select('kota_asal as kota')
+            ->union(Route::select('kota_tujuan as kota'))
+            ->union(PickupPoint::select('kota')->whereNotNull('kota'))
+            ->pluck('kota')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return view('admin.pickup_points.edit', compact('pickupPoint', 'cities'));
     }
 
     public function update(Request $request, PickupPoint $pickupPoint)
     {
         $validated = $request->validate([
-            'route_id' => 'required|exists:routes,id',
+            'kota' => 'required|string|max:100',
             'nama_titik' => 'required|string|max:150',
             'alamat' => 'required|string',
-            'tipe' => 'required|in:jemput,turun',
+            'tipe' => 'required|in:jemput,turun,keduanya',
         ]);
 
         $pickupPoint->update($validated);

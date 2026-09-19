@@ -24,10 +24,8 @@
                 <!-- Jenis Kendaraan -->
                 <div>
                     <label for="jenis" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Jenis Kendaraan</label>
-                    <select name="jenis" id="jenis" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
-                        <option value="Hiace" {{ old('jenis', $vehicle->jenis) == 'Hiace' ? 'selected' : '' }}>Toyota Hiace</option>
-                        <option value="Minibus" {{ old('jenis', $vehicle->jenis) == 'Minibus' ? 'selected' : '' }}>Minibus Standard</option>
-                    </select>
+                    <input type="text" name="jenis" id="jenis" value="{{ old('jenis', $vehicle->jenis) }}" required placeholder="Contoh: Toyota Hiace, Isuzu Elf, dsb."
+                        class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
                     @error('jenis')
                         <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>
                     @enderror

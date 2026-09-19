@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-semibold text-brex-ink tracking-brex-24">Kelola Armada Kendaraan</h1>
-            <p class="text-sm text-brex-pewter mt-1">Daftar unit armada (Hiace / Minibus) yang siap beroperasi.</p>
+            <p class="text-sm text-brex-pewter mt-1">Daftar unit armada kendaraan yang siap beroperasi.</p>
         </div>
         <a href="{{ route('admin.vehicles.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brex-ember text-white text-sm font-medium rounded-brex hover:bg-[#e04f00] transition duration-150 shadow-none">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

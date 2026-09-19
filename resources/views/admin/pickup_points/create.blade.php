@@ -12,25 +12,28 @@
             Kembali ke Daftar Titik Lokasi
         </a>
         <h1 class="text-2xl font-semibold text-brex-ink tracking-brex-24">Tambah Titik Jemput / Turun</h1>
-        <p class="text-sm text-brex-pewter mt-1">Daftarkan lokasi titik kumpul atau penurunan untuk rute perjalanan tertentu.</p>
+        <p class="text-sm text-brex-pewter mt-1">Daftarkan lokasi titik kumpul atau penurunan untuk kota tertentu (otomatis berlaku untuk semua rute di kota tersebut).</p>
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
         <form action="{{ route('admin.pickup-points.store') }}" method="POST" class="space-y-5">
             @csrf
 
-            <!-- Pilih Rute -->
+            <!-- Kota Lokasi -->
             <div>
-                <label for="route_id" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Rute Perjalanan</label>
-                <select name="route_id" id="route_id" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
-                    <option value="">-- Pilih Rute --</option>
-                    @foreach($routes as $r)
-                        <option value="{{ $r->id }}" {{ old('route_id') == $r->id ? 'selected' : '' }}>
-                            {{ $r->kota_asal }} - {{ $r->kota_tujuan }} (Rp {{ number_format($r->harga, 0, ',', '.') }})
-                        </option>
-                    @endforeach
-                </select>
-                @error('route_id')
+                <label for="kota" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Kota Lokasi</label>
+                <div class="relative">
+                    <input type="text" name="kota" id="kota" list="city-list" value="{{ old('kota') }}" required
+                        placeholder="Pilih atau ketik nama kota (contoh: Bandung, Jakarta, dsb.)"
+                        class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
+                    <datalist id="city-list">
+                        @foreach($cities as $c)
+                            <option value="{{ $c }}">
+                        @endforeach
+                    </datalist>
+                </div>
+                <p class="text-[11px] text-brex-pewter mt-1">Titik ini akan otomatis muncul pada setiap rute perjalanan yang melewati kota ini.</p>
+                @error('kota')
                     <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>
                 @enderror
             </div>
@@ -39,7 +42,7 @@
                 <!-- Nama Titik -->
                 <div>
                     <label for="nama_titik" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Nama Titik / Pool</label>
-                    <input type="text" name="nama_titik" id="nama_titik" value="{{ old('nama_titik') }}" required placeholder="Contoh: Pool Travelink Dipatiukur"
+                    <input type="text" name="nama_titik" id="nama_titik" value="{{ old('nama_titik') }}" required placeholder="Contoh: Pool Pasteur, Cihampelas, dsb."
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
                     @error('nama_titik')
                         <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>
@@ -52,6 +55,7 @@
                     <select name="tipe" id="tipe" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                         <option value="jemput" {{ old('tipe') == 'jemput' ? 'selected' : '' }}>Titik Penjemputan (Pickup)</option>
                         <option value="turun" {{ old('tipe') == 'turun' ? 'selected' : '' }}>Titik Penurunan (Dropoff)</option>
+                        <option value="keduanya" {{ old('tipe') == 'keduanya' ? 'selected' : '' }}>Jemput & Turun (Keduanya)</option>
                     </select>
                     @error('tipe')
                         <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>

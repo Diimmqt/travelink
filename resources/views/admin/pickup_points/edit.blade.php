@@ -20,17 +20,21 @@
             @csrf
             @method('PUT')
 
-            <!-- Pilih Rute -->
+            <!-- Kota Lokasi -->
             <div>
-                <label for="route_id" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Rute Perjalanan</label>
-                <select name="route_id" id="route_id" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
-                    @foreach($routes as $r)
-                        <option value="{{ $r->id }}" {{ old('route_id', $pickupPoint->route_id) == $r->id ? 'selected' : '' }}>
-                            {{ $r->kota_asal }} - {{ $r->kota_tujuan }} (Rp {{ number_format($r->harga, 0, ',', '.') }})
-                        </option>
-                    @endforeach
-                </select>
-                @error('route_id')
+                <label for="kota" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Kota Lokasi</label>
+                <div class="relative">
+                    <input type="text" name="kota" id="kota" list="city-list" value="{{ old('kota', $pickupPoint->kota) }}" required
+                        placeholder="Pilih atau ketik nama kota (contoh: Bandung, Jakarta, dsb.)"
+                        class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
+                    <datalist id="city-list">
+                        @foreach($cities as $c)
+                            <option value="{{ $c }}">
+                        @endforeach
+                    </datalist>
+                </div>
+                <p class="text-[11px] text-brex-pewter mt-1">Titik ini akan otomatis muncul pada setiap rute perjalanan yang melewati kota ini.</p>
+                @error('kota')
                     <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>
                 @enderror
             </div>
@@ -52,6 +56,7 @@
                     <select name="tipe" id="tipe" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                         <option value="jemput" {{ old('tipe', $pickupPoint->tipe) == 'jemput' ? 'selected' : '' }}>Titik Penjemputan (Pickup)</option>
                         <option value="turun" {{ old('tipe', $pickupPoint->tipe) == 'turun' ? 'selected' : '' }}>Titik Penurunan (Dropoff)</option>
+                        <option value="keduanya" {{ old('tipe', $pickupPoint->tipe) == 'keduanya' ? 'selected' : '' }}>Jemput & Turun (Keduanya)</option>
                     </select>
                     @error('tipe')
                         <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>

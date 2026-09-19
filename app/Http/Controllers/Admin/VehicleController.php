@@ -22,7 +22,7 @@ class VehicleController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'jenis' => 'required|in:Hiace,Minibus',
+            'jenis' => 'required|string|max:100',
             'plat_nomor' => 'required|string|max:20|unique:vehicles,plat_nomor',
             'kapasitas_kursi' => 'required|integer|min:1|max:50',
         ]);
@@ -40,7 +40,7 @@ class VehicleController extends Controller
     public function update(Request $request, Vehicle $vehicle)
     {
         $validated = $request->validate([
-            'jenis' => 'required|in:Hiace,Minibus',
+            'jenis' => 'required|string|max:100',
             'plat_nomor' => 'required|string|max:20|unique:vehicles,plat_nomor,' . $vehicle->id,
             'kapasitas_kursi' => 'required|integer|min:1|max:50',
         ]);
