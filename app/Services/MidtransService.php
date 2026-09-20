@@ -22,11 +22,38 @@ class MidtransService
     }
 
     /**
-     * Buat Snap token untuk pembayaran.
+     * Buat Snap token untuk pembayaran (bisa 1 atau banyak tiket).
      */
-    public function createSnapToken(Transaction $transaction, Ticket $ticket): string
+    public function createSnapToken(Transaction $transaction, ?Ticket $ticket = null): string
     {
-        $ticket->load(['schedule.route', 'seat', 'user']);
+        $transaction->load(['tickets.schedule.route', 'tickets.seat', 'user']);
+        $tickets = $transaction->tickets;
+
+        if ($tickets->isEmpty() && $ticket) {
+            $tickets = collect([$ticket]);
+        }
+
+        $user = $transaction->user ?? auth()->user();
+        $firstTicket = $tickets->first() ?? $ticket;
+
+        $items = [];
+        foreach ($tickets as $t) {
+            $items[] = [
+                'id'       => 'TICKET-' . $t->id,
+                'price'    => (int) ($t->schedule->route->harga ?? ($transaction->amount / max(1, $tickets->count()))),
+                'quantity' => 1,
+                'name'     => substr('Tiket ' . ($t->schedule->route->kota_asal ?? '') . '-' . ($t->schedule->route->kota_tujuan ?? '') . ' (' . ($t->seat->nomor_kursi ?? '') . ') ' . $t->nama_penumpang, 0, 50),
+            ];
+        }
+
+        if (empty($items)) {
+            $items[] = [
+                'id'       => 'TRX-' . $transaction->id,
+                'price'    => (int) $transaction->amount,
+                'quantity' => 1,
+                'name'     => 'Tiket Perjalanan Travelink',
+            ];
+        }
 
         $params = [
             'transaction_details' => [
@@ -34,17 +61,10 @@ class MidtransService
                 'gross_amount' => (int) $transaction->amount,
             ],
             'customer_details' => [
-                'first_name' => $ticket->nama_penumpang,
-                'email'      => $ticket->user->email,
+                'first_name' => $firstTicket->nama_penumpang ?? ($user->name ?? 'Penumpang'),
+                'email'      => $user->email ?? 'passenger@travelink.test',
             ],
-            'item_details' => [
-                [
-                    'id'       => 'TICKET-' . $ticket->id,
-                    'price'    => (int) $transaction->amount,
-                    'quantity' => 1,
-                    'name'     => 'Tiket ' . $ticket->schedule->route->kota_asal . ' - ' . $ticket->schedule->route->kota_tujuan . ' | Kursi ' . $ticket->seat->nomor_kursi,
-                ],
-            ],
+            'item_details' => $items,
         ];
 
         return Snap::getSnapToken($params);

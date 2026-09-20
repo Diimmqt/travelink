@@ -24,15 +24,17 @@ class PaymentCallbackController extends Controller
         }
 
         // Temukan transaksi berdasarkan idempotency_key (= order_id di Midtrans)
-        $transaction = Transaction::where('idempotency_key', $result['order_id'])->first();
+        $transaction = Transaction::with(['tickets.seat', 'ticket.seat'])->where('idempotency_key', $result['order_id'])->first();
 
         if (!$transaction) {
             Log::error('Transaction not found for order_id: ' . $result['order_id']);
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
-        $ticket = $transaction->ticket;
-        $seat   = $ticket->seat;
+        $allTickets = $transaction->tickets;
+        if ($allTickets->isEmpty() && $transaction->ticket) {
+            $allTickets = collect([$transaction->ticket]);
+        }
 
         if ($result['status'] === 'success') {
             // Update transaction
@@ -41,23 +43,26 @@ class PaymentCallbackController extends Controller
                 'payment_method' => $payload['payment_type'] ?? null,
             ]);
 
-            // Update ticket & seat
-            $ticket->update(['status' => 'paid']);
-            $seat->update(['status' => 'booked', 'locked_until' => null]);
+            // Update all tickets & seats
+            foreach ($allTickets as $ticket) {
+                $ticket->update(['status' => 'paid']);
+                $ticket->seat?->update(['status' => 'booked', 'locked_until' => null]);
+            }
 
-            Log::info('Payment success for ticket #' . $ticket->id);
+            Log::info('Payment success for transaction #' . $transaction->id . ' (' . $allTickets->count() . ' tickets)');
 
         } elseif ($result['status'] === 'failed') {
             // Update transaction
             $transaction->update(['status' => 'failed']);
 
-            // Update ticket & release seat
-            $ticket->update(['status' => 'expired']);
-            $seat->update(['status' => 'available', 'locked_until' => null]);
+            // Update tickets & release seats
+            foreach ($allTickets as $ticket) {
+                $ticket->update(['status' => 'expired']);
+                $ticket->seat?->update(['status' => 'available', 'locked_until' => null]);
+            }
 
-            Log::info('Payment failed for ticket #' . $ticket->id . ' — seat released.');
+            Log::info('Payment failed for transaction #' . $transaction->id . ' — seats released.');
         }
-        // Jika 'pending', tidak perlu action
 
         return response()->json(['message' => 'OK'], 200);
     }

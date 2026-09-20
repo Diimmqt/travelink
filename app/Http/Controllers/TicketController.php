@@ -25,6 +25,14 @@ class TicketController extends Controller
                 $ticket->update(['status' => 'paid']);
                 $ticket->seat?->update(['status' => 'booked', 'locked_until' => null]);
                 $ticket->transaction?->update(['status' => 'success']);
+
+                if ($ticket->transaction_id) {
+                    Ticket::where('transaction_id', $ticket->transaction_id)->update(['status' => 'paid']);
+                    $allTxTickets = Ticket::with('seat')->where('transaction_id', $ticket->transaction_id)->get();
+                    foreach ($allTxTickets as $txTicket) {
+                        $txTicket->seat?->update(['status' => 'booked', 'locked_until' => null]);
+                    }
+                }
                 $ticket->refresh();
             } else {
                 try {
@@ -48,11 +56,25 @@ class TicketController extends Controller
                                 'status' => 'success',
                                 'payment_method' => is_object($res) ? ($res->payment_type ?? null) : ($res['payment_type'] ?? null),
                             ]);
+                            if ($ticket->transaction_id) {
+                                Ticket::where('transaction_id', $ticket->transaction_id)->update(['status' => 'paid']);
+                                $allTxTickets = Ticket::with('seat')->where('transaction_id', $ticket->transaction_id)->get();
+                                foreach ($allTxTickets as $txTicket) {
+                                    $txTicket->seat?->update(['status' => 'booked', 'locked_until' => null]);
+                                }
+                            }
                             $ticket->refresh();
                         } elseif (in_array($trxStatus, ['deny', 'expire', 'cancel'])) {
                             $ticket->update(['status' => 'expired']);
                             $ticket->seat?->update(['status' => 'available', 'locked_until' => null]);
                             $transaction->update(['status' => 'failed']);
+                            if ($ticket->transaction_id) {
+                                Ticket::where('transaction_id', $ticket->transaction_id)->update(['status' => 'expired']);
+                                $allTxTickets = Ticket::with('seat')->where('transaction_id', $ticket->transaction_id)->get();
+                                foreach ($allTxTickets as $txTicket) {
+                                    $txTicket->seat?->update(['status' => 'available', 'locked_until' => null]);
+                                }
+                            }
                             $ticket->refresh();
                         }
                     }
@@ -72,6 +94,10 @@ class TicketController extends Controller
             'transaction',
         ]);
 
+        $relatedTickets = $ticket->transaction_id 
+            ? Ticket::where('transaction_id', $ticket->transaction_id)->with(['seat', 'schedule.route'])->get()
+            : collect([$ticket]);
+
         // Generate QR code sebagai SVG string hanya jika pembayaran sudah berhasil
         $qrCode = null;
         if (in_array($ticket->status, ['paid', 'boarded'])) {
@@ -82,7 +108,7 @@ class TicketController extends Controller
                 ->generate($ticket->qr_token);
         }
 
-        return view('tickets.show', compact('ticket', 'qrCode'));
+        return view('tickets.show', compact('ticket', 'qrCode', 'relatedTickets'));
     }
 
     public function history()
@@ -98,15 +124,15 @@ class TicketController extends Controller
     public function requestRefund(Request $request, Ticket $ticket)
     {
         if ($ticket->user_id !== Auth::id()) {
-            abort(403);
+            abort(403, 'Akses ditolak.');
         }
 
         if ($ticket->status !== 'paid') {
-            return redirect()->back()->with('error', 'Hanya tiket dengan status LUNAS yang dapat diajukan refund/reschedule.');
+            return back()->with('error', 'Hanya tiket yang berstatus lunas yang dapat mengajukan refund/reschedule.');
         }
 
         $ticket->update(['status' => 'refund_requested']);
 
-        return redirect()->back()->with('success', 'Permohonan refund/reschedule Anda telah berhasil dikirim ke Admin.');
+        return back()->with('success', 'Pengajuan refund/reschedule berhasil dikirim ke Admin untuk ditinjau.');
     }
 }

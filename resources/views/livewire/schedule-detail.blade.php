@@ -1,21 +1,32 @@
 <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
     <!-- Back Navigation & Header -->
     <div class="mb-8">
-        <a href="{{ route('schedules.search') }}" wire:navigate 
-            class="brex-btn-secondary text-xs px-3.5 py-2 mb-4 inline-flex items-center gap-2 font-medium">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span>Kembali ke Pencarian</span>
-        </a>
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <a href="{{ route('booking.passenger', ['schedule_id' => $schedule->id]) }}" wire:navigate 
+                class="brex-btn-secondary text-xs px-3.5 py-2 inline-flex items-center gap-2 font-medium">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>&larr; Ubah Data Penumpang</span>
+            </a>
+
+            <span class="text-xs font-semibold uppercase tracking-widest text-brex-ember">
+                Langkah 2 dari 3: Pilih Titik &amp; Kursi
+            </span>
+        </div>
 
         <div class="brex-card p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-brex-chip text-xs font-semibold uppercase tracking-wider bg-brex-fog border border-brex-mist text-brex-graphite">
-                    <span class="w-1.5 h-1.5 rounded-full bg-brex-ember"></span>
-                    Detail Jadwal #{{ $schedule->id }}
-                </span>
-                <h2 class="text-2xl sm:text-3xl font-semibold text-brex-ink tracking-brex-24 mt-3">
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-brex-chip text-xs font-semibold uppercase tracking-wider bg-brex-fog border border-brex-mist text-brex-graphite">
+                        <span class="w-1.5 h-1.5 rounded-full bg-brex-ember"></span>
+                        Jadwal #{{ $schedule->id }}
+                    </span>
+                    <span class="px-2.5 py-1 rounded-brex-chip bg-brex-fog border border-brex-mist text-xs font-semibold text-brex-ink">
+                        {{ $passengerCount }} Penumpang
+                    </span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-semibold text-brex-ink tracking-brex-24">
                     {{ $schedule->route->kota_asal }} &rarr; {{ $schedule->route->kota_tujuan }}
                 </h2>
                 <div class="flex flex-wrap items-center gap-4 mt-2 text-xs font-medium text-brex-graphite">
@@ -32,15 +43,17 @@
                         </svg>
                         {{ \Carbon\Carbon::parse($schedule->waktu_berangkat)->format('H:i') }} WIB
                     </span>
+                    <span>·</span>
+                    <span>{{ $schedule->vehicle->jenis }} ({{ $schedule->vehicle->plat_nomor }})</span>
                 </div>
             </div>
             <div class="text-left md:text-right">
-                <span class="text-xs font-semibold uppercase tracking-wider block text-brex-pewter">Harga Tiket</span>
+                <span class="text-xs font-semibold uppercase tracking-wider block text-brex-pewter">Tarif ({{ $passengerCount }} Tiket)</span>
                 <span class="text-3xl font-semibold block mt-0.5 text-brex-ink tracking-brex-36">
-                    Rp {{ number_format($schedule->route->harga, 0, ',', '.') }}
+                    Rp {{ number_format($schedule->route->harga * $passengerCount, 0, ',', '.') }}
                 </span>
                 <span class="text-xs block mt-1 text-brex-pewter">
-                    Armada: <span class="text-brex-ink font-medium">{{ $schedule->vehicle->jenis }} ({{ $schedule->vehicle->plat_nomor }})</span>
+                    Rp {{ number_format($schedule->route->harga, 0, ',', '.') }} / tiket
                 </span>
             </div>
         </div>
@@ -60,8 +73,8 @@
         <!-- Left: Interactive Stepper for Pickup & Dropoff -->
         <div class="lg:col-span-7 brex-card p-6 md:p-8 space-y-8">
             <div>
-                <h3 class="text-lg font-semibold text-brex-ink tracking-brex-24">Rute &amp; Titik Singgah</h3>
-                <p class="text-xs text-brex-graphite mt-1">Pilih lokasi penjemputan dan penurunan Anda dengan mengeklik titik di bawah.</p>
+                <h3 class="text-lg font-semibold text-brex-ink tracking-brex-24">1. Rute &amp; Titik Singgah</h3>
+                <p class="text-xs text-brex-graphite mt-1">Pilih lokasi penjemputan dan penurunan untuk seluruh tiket Anda.</p>
             </div>
 
             <!-- Stepper Timeline -->
@@ -71,7 +84,7 @@
                 <div class="space-y-3 relative">
                     <!-- Dot Marker -->
                     <div class="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-brex-ember ring-4 ring-brex-ember/20 z-10"></div>
-                    <span class="text-xs font-semibold uppercase tracking-widest block text-brex-pewter">Titik Penjemputan (Naik)</span>
+                    <span class="text-xs font-semibold uppercase tracking-widest block text-brex-pewter">Titik Penjemputan di {{ $schedule->route->kota_asal }}</span>
                     
                     <div class="grid grid-cols-1 gap-2.5">
                         @forelse($pickupPoints as $point)
@@ -102,7 +115,7 @@
                 <div class="space-y-3 relative">
                     <!-- Dot Marker -->
                     <div class="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-emerald-600 ring-4 ring-emerald-600/20 z-10"></div>
-                    <span class="text-xs font-semibold uppercase tracking-widest block text-brex-pewter">Titik Penurunan (Turun)</span>
+                    <span class="text-xs font-semibold uppercase tracking-widest block text-brex-pewter">Titik Penurunan di {{ $schedule->route->kota_tujuan }}</span>
 
                     <div class="grid grid-cols-1 gap-2.5">
                         @forelse($dropoffPoints as $point)
@@ -135,23 +148,34 @@
         <!-- Right: Seating Layout Map -->
         <div class="lg:col-span-5 brex-card p-6 md:p-8 space-y-6">
             <div>
-                <h3 class="text-lg font-semibold text-brex-ink tracking-brex-24">Pilih Kursi</h3>
-                <p class="text-xs text-brex-graphite mt-1">Silakan klik nomor kursi yang tersedia.</p>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-brex-ink tracking-brex-24">2. Pilih Kursi</h3>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-brex-chip {{ count($selectedSeats) === $passengerCount ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-brex-fog text-brex-ink border border-brex-mist' }}">
+                        {{ count($selectedSeats) }}/{{ $passengerCount }} Kursi Dipilih
+                    </span>
+                </div>
+                <p class="text-xs text-brex-graphite mt-1">
+                    Silakan klik kursi di diagram bawah sesuai jumlah penumpang (<strong>{{ $passengerCount }} kursi</strong>).
+                </p>
             </div>
 
             <!-- Seat Legend -->
-            <div class="flex justify-between items-center gap-3 text-xs font-semibold p-3.5 rounded-brex bg-brex-fog border border-brex-mist text-brex-graphite">
-                <div class="flex items-center gap-1.5">
+            <div class="grid grid-cols-4 gap-2 text-[11px] font-semibold p-3 rounded-brex bg-brex-fog border border-brex-mist text-brex-graphite text-center">
+                <div class="flex items-center justify-center gap-1">
                     <div class="w-3 h-3 rounded-brex-chip bg-white border border-brex-mist"></div>
                     <span>Tersedia</span>
                 </div>
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center justify-center gap-1">
+                    <div class="w-3 h-3 rounded-brex-chip bg-brex-ember border border-brex-ember"></div>
+                    <span class="text-brex-ember font-bold">Dipilih</span>
+                </div>
+                <div class="flex items-center justify-center gap-1">
                     <div class="w-3 h-3 rounded-brex-chip bg-brex-fog border border-brex-mist"></div>
                     <span>Locked</span>
                 </div>
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center justify-center gap-1">
                     <div class="w-3 h-3 rounded-brex-chip bg-red-100 border border-red-300"></div>
-                    <span>Terisi</span>
+                    <span class="text-red-600">Terisi</span>
                 </div>
             </div>
 
@@ -226,11 +250,10 @@
                 <div class="space-y-3">
                     @foreach($rows as $index => $row)
                         @if($row['type'] == 'front')
-                            <!-- Front row -->
                             <div class="grid grid-cols-4 gap-2.5 items-center">
                                 <div class="col-span-2">
                                     @if(!empty($row['left']))
-                                        @include('livewire.partials.seat-button', ['seat' => $row['left']])
+                                        @include('livewire.partials.seat-button', ['seat' => $row['left'], 'selectedSeats' => $selectedSeats])
                                     @endif
                                 </div>
                                 <div class="col-span-1"></div>
@@ -241,12 +264,11 @@
                                 </div>
                             </div>
                         @elseif($row['type'] == 'row')
-                            <!-- Middle rows (Left double, aisle, Right single) -->
                             <div class="grid grid-cols-4 gap-2.5 items-center">
                                 <div class="col-span-2 grid grid-cols-2 gap-2.5">
                                     @foreach($row['left'] as $seatObj)
                                         @if($seatObj)
-                                            @include('livewire.partials.seat-button', ['seat' => $seatObj])
+                                            @include('livewire.partials.seat-button', ['seat' => $seatObj, 'selectedSeats' => $selectedSeats])
                                         @endif
                                     @endforeach
                                 </div>
@@ -256,18 +278,17 @@
                                 <div class="col-span-1">
                                     @foreach($row['right'] as $seatObj)
                                         @if($seatObj)
-                                            @include('livewire.partials.seat-button', ['seat' => $seatObj])
+                                            @include('livewire.partials.seat-button', ['seat' => $seatObj, 'selectedSeats' => $selectedSeats])
                                         @endif
                                     @endforeach
                                 </div>
                             </div>
                         @elseif($row['type'] == 'back')
-                            <!-- Back row -->
                             <div class="border-t border-brex-mist pt-3 mt-1">
                                 <div class="grid grid-cols-5 gap-2">
                                     @foreach($row['seats'] as $seatObj)
                                         @if($seatObj)
-                                            @include('livewire.partials.seat-button', ['seat' => $seatObj])
+                                            @include('livewire.partials.seat-button', ['seat' => $seatObj, 'selectedSeats' => $selectedSeats])
                                         @endif
                                     @endforeach
                                 </div>
@@ -275,6 +296,31 @@
                         @endif
                     @endforeach
                 </div>
+            </div>
+
+            <!-- Booking Summary Box & Proceed Button -->
+            <div class="p-4 rounded-brex bg-white border border-brex-mist space-y-3">
+                <div class="text-xs space-y-1.5 pb-3 border-b border-brex-mist">
+                    <div class="flex justify-between">
+                        <span class="text-brex-pewter">Penumpang:</span>
+                        <span class="font-semibold text-brex-ink text-right">{{ $passengerCount }} Orang</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-brex-pewter">Kursi Terpilih:</span>
+                        <span class="font-bold text-brex-ember text-right">
+                            {{ $selectedSeatObjects->isNotEmpty() ? $selectedSeatObjects->pluck('nomor_kursi')->join(', ') : 'Belum dipilih' }}
+                        </span>
+                    </div>
+                </div>
+
+                <button type="button" wire:click="proceedToCheckout"
+                    @if(count($selectedSeats) !== $passengerCount) disabled @endif
+                    class="w-full py-3.5 px-4 rounded-brex font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 {{ count($selectedSeats) === $passengerCount ? 'bg-brex-ember text-white hover:bg-[#e04f00] cursor-pointer' : 'bg-brex-fog text-brex-steel border border-brex-mist cursor-not-allowed' }}">
+                    <span>Lanjut ke Pembayaran</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </button>
             </div>
         </div>
 

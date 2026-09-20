@@ -49,7 +49,7 @@
                                         <span>·</span>
                                         <span>Kursi: <strong class="text-gray-900 font-bold">{{ $ticket->seat->nomor_kursi }}</strong></span>
                                         <span>·</span>
-                                        <span>Penumpang: {{ $ticket->nama_penumpang }}</span>
+                                        <span>Penumpang: <strong class="text-gray-900 font-semibold">{{ $ticket->nama_penumpang }}</strong>@if($ticket->nik) <span class="font-mono">({{ $ticket->nik }})</span>@endif</span>
                                     </div>
                                 </div>
 

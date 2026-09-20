@@ -98,6 +98,9 @@
                     <div>
                         <span class="text-xs font-semibold text-brex-pewter uppercase block">Nama Penumpang</span>
                         <span class="font-semibold text-brex-ink text-base">{{ $t->nama_penumpang }}</span>
+                        @if($t->nik)
+                            <span class="text-xs text-brex-pewter font-mono block">NIK: {{ $t->nik }}</span>
+                        @endif
                     </div>
                     <div>
                         <span class="text-xs font-semibold text-brex-pewter uppercase block">Rute Perjalanan</span>
@@ -150,6 +153,9 @@
                             </td>
                             <td class="py-4 px-6 font-semibold text-brex-ink">
                                 {{ $log->ticket->nama_penumpang ?? '-' }}
+                                @if(!empty($log->ticket->nik))
+                                    <span class="text-[11px] text-brex-pewter font-mono block">NIK: {{ $log->ticket->nik }}</span>
+                                @endif
                             </td>
                             <td class="py-4 px-6 text-brex-graphite">
                                 {{ $log->ticket->schedule->route->kota_asal ?? '' }} - {{ $log->ticket->schedule->route->kota_tujuan ?? '' }}

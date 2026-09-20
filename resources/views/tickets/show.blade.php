@@ -470,6 +470,25 @@
                     </div>
                 @endif
 
+                @if(isset($relatedTickets) && $relatedTickets->count() > 1)
+                    <div class="bg-white border border-brex-mist rounded-brex p-3.5 flex items-center justify-between gap-3 overflow-x-auto print:hidden">
+                        <div class="flex items-center gap-2 shrink-0">
+                            <svg class="w-4 h-4 text-brex-ember shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <span class="text-xs font-semibold text-brex-ink">Tiket Rombongan ({{ $relatedTickets->count() }} Penumpang):</span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            @foreach($relatedTickets as $idx => $relTicket)
+                                <a href="{{ route('tickets.show', $relTicket->id) }}"
+                                   class="px-3 py-1.5 rounded-brex text-xs font-semibold transition-all {{ $relTicket->id == $ticket->id ? 'bg-brex-ember text-white shadow-sm' : 'bg-brex-fog border border-brex-mist text-brex-ink hover:border-brex-ember' }}">
+                                    {{ $idx + 1 }}. {{ $relTicket->nama_penumpang }} (Kursi {{ $relTicket->seat->nomor_kursi ?? '-' }})
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 {{-- ── Boarding pass card ── --}}
                 <div class="pass-card">
 
@@ -499,10 +518,13 @@
                         </div>
 
                         <div class="pass-grid">
-                            {{-- Passenger name --}}
+                            {{-- Passenger name & NIK --}}
                             <div class="pass-field">
                                 <div class="pass-field-label">Nama Penumpang</div>
                                 <div class="pass-field-value">{{ $ticket->nama_penumpang }}</div>
+                                @if($ticket->nik)
+                                    <div class="pass-field-sub" style="font-family: monospace; font-size: 0.75rem; color: #64748b; margin-top: 2px;">NIK: {{ $ticket->nik }}</div>
+                                @endif
                             </div>
 
                             {{-- Departure time --}}

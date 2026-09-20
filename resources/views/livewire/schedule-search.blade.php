@@ -185,9 +185,9 @@
                             </div>
 
                             @if($schedule->sisa_kursi > 0)
-                                <a href="{{ route('schedules.detail', $schedule->id) }}" wire:navigate
+                                <a href="{{ route('booking.passenger', ['schedule_id' => $schedule->id]) }}" wire:navigate
                                    class="brex-btn-ember text-xs px-3.5 py-1.5 font-semibold">
-                                    Pilih Kursi
+                                    Pesan Tiket
                                 </a>
                             @else
                                 <span class="text-xs px-3.5 py-1.5 rounded-brex bg-brex-fog border border-brex-mist text-brex-steel cursor-not-allowed font-medium">

@@ -4,65 +4,106 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Schedule;
-use App\Models\Seat;
-use App\Models\PickupPoint;
 
 class PassengerForm extends Component
 {
-    public $nama_penumpang = '';
-    public $bookingData = null;
-    
+    public $schedule_id;
     public $schedule;
-    public $seat;
-    public $pickup;
-    public $dropoff;
+    public $availableSeats = 0;
+    public $passengers = [];
+
+    protected $rules = [
+        'passengers' => 'required|array|min:1',
+        'passengers.*.nama_lengkap' => 'required|string|min:3|max:100',
+        'passengers.*.nik' => ['required', 'string', 'regex:/^[0-9]{16}$/'],
+    ];
+
+    protected $messages = [
+        'passengers.*.nama_lengkap.required' => 'Nama lengkap penumpang wajib diisi.',
+        'passengers.*.nama_lengkap.min' => 'Nama lengkap minimal 3 karakter.',
+        'passengers.*.nik.required' => 'NIK wajib diisi.',
+        'passengers.*.nik.regex' => 'NIK harus 16 digit angka sesuai KTP.',
+    ];
 
     public function mount()
     {
-        $this->bookingData = session('booking');
-        
-        if (!$this->bookingData) {
+        $scheduleId = request()->query('schedule_id', session('booking.schedule_id'));
+
+        if (!$scheduleId) {
             return redirect()->route('schedules.search');
         }
 
-        $this->schedule = Schedule::with(['route', 'vehicle'])->find($this->bookingData['schedule_id']);
-        $this->seat = Seat::find($this->bookingData['seat_id']);
-        $this->pickup = !empty($this->bookingData['pickup_point_id']) ? PickupPoint::find($this->bookingData['pickup_point_id']) : null;
-        $this->dropoff = !empty($this->bookingData['dropoff_point_id']) ? PickupPoint::find($this->bookingData['dropoff_point_id']) : null;
-        
-        if (!$this->schedule || !$this->seat) {
+        $this->schedule_id = $scheduleId;
+        $this->schedule = Schedule::with(['route', 'vehicle', 'seats'])->find($scheduleId);
+
+        if (!$this->schedule) {
             session()->forget('booking');
-            return $this->redirectRoute('schedules.search', navigate: true);
+            return redirect()->route('schedules.search');
         }
 
-        // Ensure seat is still locked for this session
-        if ($this->seat->status !== 'locked' || ($this->seat->locked_until && $this->seat->locked_until < now())) {
-            session()->forget('booking');
-            session()->flash('error', 'Waktu pemilihan kursi habis. Silakan pilih kembali.');
-            return $this->redirectRoute('schedules.detail', ['schedule' => $this->schedule->id], navigate: true);
+        // Hitung ketersediaan kursi
+        $this->availableSeats = $this->schedule->seats->filter(function ($seat) {
+            return $seat->status === 'available' || 
+                   ($seat->status === 'locked' && $seat->locked_until && $seat->locked_until < now());
+        })->count();
+
+        if ($this->availableSeats < 1) {
+            session()->flash('error', 'Maaf, seluruh kursi pada jadwal ini sudah terisi.');
+            return redirect()->route('schedules.search');
+        }
+
+        // Inisialisasi daftar penumpang
+        $savedBooking = session('booking');
+        if ($savedBooking && isset($savedBooking['schedule_id']) && $savedBooking['schedule_id'] == $scheduleId && !empty($savedBooking['passengers'])) {
+            $this->passengers = $savedBooking['passengers'];
+        } else {
+            $this->passengers = [
+                [
+                    'nama_lengkap' => auth()->user()->name ?? '',
+                    'nik' => '',
+                ]
+            ];
+        }
+    }
+
+    public function addPassenger()
+    {
+        $maxAllowed = min(6, $this->availableSeats);
+        if (count($this->passengers) < $maxAllowed) {
+            $this->passengers[] = [
+                'nama_lengkap' => '',
+                'nik' => '',
+            ];
+        }
+    }
+
+    public function removePassenger($index)
+    {
+        if (count($this->passengers) > 1 && isset($this->passengers[$index])) {
+            unset($this->passengers[$index]);
+            $this->passengers = array_values($this->passengers);
         }
     }
 
     public function submitForm()
     {
-        $this->validate([
-            'nama_penumpang' => 'required|min:3',
-        ]);
+        $this->validate();
 
-        // Cek lagi apakah lock masih valid
-        if ($this->seat->status !== 'locked' || ($this->seat->locked_until && $this->seat->locked_until < now())) {
-            session()->forget('booking');
-            session()->flash('error', 'Waktu pemilihan kursi habis. Silakan pilih kembali.');
-            return $this->redirectRoute('schedules.detail', ['schedule' => $this->schedule->id], navigate: true);
+        $maxAllowed = min(6, $this->availableSeats);
+        if (count($this->passengers) > $maxAllowed) {
+            $this->addError('passengers', "Maksimal pemesanan adalah {$maxAllowed} tiket.");
+            return;
         }
 
-        // Update session dgn nama penumpang
-        $booking = session('booking');
-        $booking['nama_penumpang'] = $this->nama_penumpang;
-        session()->put('booking', $booking);
+        // Simpan data penumpang ke session
+        session()->put('booking', [
+            'schedule_id' => $this->schedule->id,
+            'passengers' => $this->passengers,
+            'passenger_count' => count($this->passengers),
+        ]);
 
-        // Redirect ke halaman checkout
-        return redirect()->route('checkout.show');
+        // Lanjut ke pemilihan titik jemput/turun & kursi di schedule detail
+        return redirect()->route('schedules.detail', ['schedule' => $this->schedule->id]);
     }
 
     public function render()

@@ -14,6 +14,9 @@ class ScheduleDetail extends Component
     public $schedule;
     public $pickup_point_id = '';
     public $dropoff_point_id = '';
+    public $passengers = [];
+    public $passengerCount = 1;
+    public $selectedSeats = [];
 
     public function getJemputPointsProperty()
     {
@@ -37,106 +40,131 @@ class ScheduleDetail extends Component
     {
         $this->schedule = $schedule->load(['route', 'vehicle']);
 
-        // Auto-select if only 1 option exists
+        // Check if passenger booking exists in session for this schedule
+        $booking = session('booking');
+        if (!$booking || !isset($booking['schedule_id']) || $booking['schedule_id'] != $this->schedule->id || empty($booking['passengers'])) {
+            return redirect()->route('booking.passenger', ['schedule_id' => $this->schedule->id]);
+        }
+
+        $this->passengers = $booking['passengers'];
+        $this->passengerCount = count($this->passengers);
+
+        // Pre-fill pickup / dropoff if already in session
+        if (!empty($booking['pickup_point_id'])) {
+            $this->pickup_point_id = $booking['pickup_point_id'];
+        }
+        if (!empty($booking['dropoff_point_id'])) {
+            $this->dropoff_point_id = $booking['dropoff_point_id'];
+        }
+
+        // Auto-select single pickup/dropoff points if available
         $jemput = $this->jemputPoints;
-        if ($jemput && $jemput->count() === 1) {
+        if ($jemput && $jemput->count() === 1 && empty($this->pickup_point_id)) {
             $this->pickup_point_id = $jemput->first()->id;
         }
 
         $turun = $this->turunPoints;
-        if ($turun && $turun->count() === 1) {
+        if ($turun && $turun->count() === 1 && empty($this->dropoff_point_id)) {
             $this->dropoff_point_id = $turun->first()->id;
+        }
+
+        // Pre-fill previously selected seats if any
+        if (!empty($booking['seat_ids']) && is_array($booking['seat_ids'])) {
+            $this->selectedSeats = $booking['seat_ids'];
+        } elseif (!empty($booking['seat_id'])) {
+            $this->selectedSeats = [$booking['seat_id']];
         }
     }
 
     public function selectSeat($seatId)
     {
-        $jemput = $this->jemputPoints;
-        $turun = $this->turunPoints;
-
-        $hasPickup = $jemput->isNotEmpty();
-        $hasDropoff = $turun->isNotEmpty();
-
-        // If only 1 point exists, auto-assign
-        if ($hasPickup && empty($this->pickup_point_id)) {
-            $this->pickup_point_id = $jemput->first()->id;
-        }
-        if ($hasDropoff && empty($this->dropoff_point_id)) {
-            $this->dropoff_point_id = $turun->first()->id;
+        $seat = Seat::find($seatId);
+        if (!$seat || $seat->effective_status !== 'available') {
+            // If already in selectedSeats, allow unselecting
+            if (in_array($seatId, $this->selectedSeats)) {
+                $this->selectedSeats = array_values(array_diff($this->selectedSeats, [$seatId]));
+            } else {
+                session()->flash('error', 'Kursi ini tidak tersedia.');
+            }
+            return;
         }
 
-        // Validation
+        // Toggle selection
+        if (in_array($seatId, $this->selectedSeats)) {
+            $this->selectedSeats = array_values(array_diff($this->selectedSeats, [$seatId]));
+        } else {
+            if (count($this->selectedSeats) >= $this->passengerCount) {
+                if ($this->passengerCount === 1) {
+                    $this->selectedSeats = [$seatId];
+                } else {
+                    session()->flash('error', "Anda telah memilih {$this->passengerCount} kursi. Klik kursi terpilih untuk membatalkan sebelum memilih kursi lain.");
+                }
+            } else {
+                $this->selectedSeats[] = $seatId;
+            }
+        }
+    }
+
+    public function proceedToCheckout()
+    {
+        $hasPickup = $this->jemputPoints->isNotEmpty();
+        $hasDropoff = $this->turunPoints->isNotEmpty();
+
         if ($hasPickup && empty($this->pickup_point_id)) {
             session()->flash('error', 'Silakan pilih titik jemput terlebih dahulu.');
             return;
         }
+
         if ($hasDropoff && empty($this->dropoff_point_id)) {
             session()->flash('error', 'Silakan pilih titik turun terlebih dahulu.');
             return;
         }
 
+        if (count($this->selectedSeats) !== $this->passengerCount) {
+            $missing = $this->passengerCount - count($this->selectedSeats);
+            session()->flash('error', "Silakan pilih {$this->passengerCount} kursi (kurang {$missing} kursi lagi).");
+            return;
+        }
+
         try {
-            DB::transaction(function () use ($seatId) {
-                // Expire any stale pending tickets older than 10 minutes for this schedule
+            DB::transaction(function () {
+                // Expire stale pending tickets
                 Ticket::where('schedule_id', $this->schedule->id)
                     ->where('status', 'pending')
                     ->where('created_at', '<', now()->subMinutes(10))
                     ->update(['status' => 'expired']);
 
-                // Lock the specific seat row for update
-                $seat = Seat::where('id', $seatId)->lockForUpdate()->first();
+                // Lock each selected seat
+                foreach ($this->selectedSeats as $seatId) {
+                    $seat = Seat::where('id', $seatId)->lockForUpdate()->first();
+                    if (!$seat) {
+                        throw new \Exception('Kursi tidak ditemukan.');
+                    }
 
-                if (!$seat) {
-                    throw new \Exception('Kursi tidak ditemukan.');
+                    if ($seat->effective_status !== 'available') {
+                        throw new \Exception("Kursi {$seat->nomor_kursi} sudah tidak tersedia.");
+                    }
+
+                    $seat->update([
+                        'status' => 'locked',
+                        'locked_until' => now()->addMinutes(10)
+                    ]);
                 }
 
-                // Check for active paid/boarded tickets for this seat
-                $activePaidTicket = Ticket::where('seat_id', $seat->id)
-                    ->whereIn('status', ['paid', 'boarded'])
-                    ->exists();
-
-                if ($activePaidTicket || $seat->status === 'booked') {
-                    $seat->update(['status' => 'booked', 'locked_until' => null]);
-                    throw new \Exception('Kursi sudah dipesan dan terisi.');
-                }
-
-                // Check for active unexpired pending ticket
-                $activePendingTicket = Ticket::where('seat_id', $seat->id)
-                    ->where('status', 'pending')
-                    ->where('created_at', '>=', now()->subMinutes(10))
-                    ->first();
-
-                $currentBooking = session('booking');
-                $isSameSessionSeat = $currentBooking && isset($currentBooking['seat_id']) && $currentBooking['seat_id'] == $seat->id;
-
-                if ($activePendingTicket && !$isSameSessionSeat) {
-                    throw new \Exception('Kursi sedang dalam proses pembayaran oleh transaksi lain.');
-                }
-
-                // Check if locked by another user session
-                if ($seat->status === 'locked' && $seat->locked_until && $seat->locked_until >= now() && !$isSameSessionSeat) {
-                    throw new \Exception('Kursi sedang dipilih oleh penumpang lain.');
-                }
-
-                // Lock seat for this user
-                $seat->update([
-                    'status' => 'locked',
-                    'locked_until' => now()->addMinutes(10)
-                ]);
-
-                // Simpan pilihan ke session
-                session()->put('booking', [
-                    'schedule_id' => $this->schedule->id,
-                    'seat_id' => $seat->id,
-                    'pickup_point_id' => $this->pickup_point_id,
-                    'dropoff_point_id' => $this->dropoff_point_id,
-                    'locked_until' => $seat->locked_until
-                ]);
+                // Update session
+                $booking = session('booking', []);
+                $booking['schedule_id'] = $this->schedule->id;
+                $booking['passengers'] = $this->passengers;
+                $booking['passenger_count'] = $this->passengerCount;
+                $booking['seat_ids'] = array_values($this->selectedSeats);
+                $booking['seat_id'] = $this->selectedSeats[0] ?? null;
+                $booking['pickup_point_id'] = $this->pickup_point_id;
+                $booking['dropoff_point_id'] = $this->dropoff_point_id;
+                session()->put('booking', $booking);
             });
 
-            // Redirect ke halaman passenger form
-            return $this->redirectRoute('booking.passenger', navigate: true);
-            
+            return redirect()->route('checkout.show');
+
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -144,19 +172,22 @@ class ScheduleDetail extends Component
 
     public function render()
     {
-        // Auto-expire stale pending tickets on render so UI is always accurate
+        // Auto-expire stale pending tickets on render
         Ticket::where('schedule_id', $this->schedule->id)
             ->where('status', 'pending')
             ->where('created_at', '<', now()->subMinutes(10))
             ->update(['status' => 'expired']);
 
-        // Dapatkan data kursi terbaru
         $seats = $this->schedule->seats()->orderBy('id')->get();
+
+        // Get selected seat objects for display
+        $selectedSeatObjects = $seats->whereIn('id', $this->selectedSeats);
 
         return view('livewire.schedule-detail', [
             'pickupPoints' => $this->jemputPoints,
             'dropoffPoints' => $this->turunPoints,
             'seats' => $seats,
+            'selectedSeatObjects' => $selectedSeatObjects,
         ])->layout('layouts.app');
     }
 }
