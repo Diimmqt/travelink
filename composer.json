@@ -10,8 +10,8 @@
         "laravel/tinker": "^2.9",
         "livewire/livewire": "^3.6.4",
         "livewire/volt": "^1.7.0",
-        "midtrans/midtrans-php": "*",
-        "simplesoftwareio/simple-qrcode": "*"
+        "midtrans/midtrans-php": "^2.6",
+        "simplesoftwareio/simple-qrcode": "^4.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

@@ -76,13 +76,30 @@ class MidtransService
      */
     public function handleNotification(array $payload): array
     {
+        // Validasi keberadaan payload fields yang wajib ada
+        if (
+            empty($payload['order_id']) ||
+            empty($payload['status_code']) ||
+            !isset($payload['gross_amount']) ||
+            empty($payload['signature_key']) ||
+            empty($payload['transaction_status'])
+        ) {
+            Log::warning('Midtrans webhook: payload tidak lengkap');
+            throw new \Exception('Missing required webhook payload fields');
+        }
+
         // Verifikasi signature
-        $serverKey      = config('midtrans.server_key');
-        $signatureKey   = hash('sha512',
+        $serverKey = config('midtrans.server_key');
+        if (empty($serverKey)) {
+            Log::error('Midtrans webhook: server key belum dikonfigurasi di environment');
+            throw new \Exception('Midtrans server key not configured');
+        }
+
+        $signatureKey = hash('sha512',
             $payload['order_id'] . $payload['status_code'] . $payload['gross_amount'] . $serverKey
         );
 
-        if ($signatureKey !== $payload['signature_key']) {
+        if (!hash_equals($signatureKey, (string) $payload['signature_key'])) {
             Log::warning('Midtrans webhook: invalid signature for order ' . ($payload['order_id'] ?? 'unknown'));
             throw new \Exception('Invalid signature key');
         }

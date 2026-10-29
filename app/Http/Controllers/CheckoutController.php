@@ -25,14 +25,20 @@ class CheckoutController extends Controller
         }
 
         $schedule = Schedule::with(['route', 'vehicle'])->find($booking['schedule_id']);
-        $seats    = Seat::whereIn('id', $booking['seat_ids'])->orderBy('id')->get();
+        if (!$schedule) {
+            session()->forget('booking');
+            return redirect()->route('schedules.search')
+                ->with('error', 'Data jadwal tidak ditemukan.');
+        }
+
+        $seats    = Seat::whereIn('id', $booking['seat_ids'])->where('schedule_id', $schedule->id)->orderBy('id')->get();
         $pickup   = PickupPoint::find($booking['pickup_point_id']);
         $dropoff  = PickupPoint::find($booking['dropoff_point_id']);
 
-        if (!$schedule || $seats->count() !== count($booking['passengers'])) {
+        if ($seats->count() !== count($booking['passengers'])) {
             session()->forget('booking');
             return redirect()->route('schedules.detail', $booking['schedule_id'])
-                ->with('error', 'Pilihan kursi tidak lengkap. Silakan pilih kembali.');
+                ->with('error', 'Pilihan kursi tidak lengkap atau tidak valid. Silakan pilih kembali.');
         }
 
         // Check if any seat is booked by another transaction
@@ -92,11 +98,14 @@ class CheckoutController extends Controller
                     $passengerCount = count($booking['passengers']);
                     $seatIds = $booking['seat_ids'];
 
-                    // Lock all seat rows for update
-                    $seats = Seat::whereIn('id', $seatIds)->lockForUpdate()->get();
+                    // Lock all seat rows for update, strictly belonging to this schedule
+                    $seats = Seat::whereIn('id', $seatIds)
+                        ->where('schedule_id', $schedule->id)
+                        ->lockForUpdate()
+                        ->get();
 
                     if ($seats->count() !== $passengerCount) {
-                        throw new \Exception('Jumlah kursi tidak sesuai dengan jumlah penumpang.');
+                        throw new \Exception('Satu atau lebih kursi yang dipilih tidak valid untuk jadwal keberangkatan ini.');
                     }
 
                     // Expire stale tickets for this schedule

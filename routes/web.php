@@ -83,9 +83,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/refunds/{ticket}/reject', [RefundController::class, 'reject'])->name('refunds.reject');
 });
 
-// Webhook Midtrans (exclude CSRF)
+// Webhook Midtrans (exclude CSRF, throttle to prevent abuse)
 Route::post('/payment/callback', [PaymentCallbackController::class, 'handle'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->middleware(['throttle:60,1'])
     ->name('payment.callback');
 
 require __DIR__.'/auth.php';

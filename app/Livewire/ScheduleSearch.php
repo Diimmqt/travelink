@@ -46,10 +46,13 @@ class ScheduleSearch extends Component
 
         $date = Carbon::parse($this->tanggal)->format('Y-m-d');
 
+        $escapedAsal = addcslashes($this->kota_asal, '%_');
+        $escapedTujuan = addcslashes($this->kota_tujuan, '%_');
+
         return Schedule::with(['route', 'vehicle', 'seats'])
-            ->whereHas('route', function ($query) {
-                $query->where('kota_asal', 'like', "%{$this->kota_asal}%")
-                      ->where('kota_tujuan', 'like', "%{$this->kota_tujuan}%");
+            ->whereHas('route', function ($query) use ($escapedAsal, $escapedTujuan) {
+                $query->where('kota_asal', 'like', "%{$escapedAsal}%")
+                      ->where('kota_tujuan', 'like', "%{$escapedTujuan}%");
             })
             ->whereDate('waktu_berangkat', $date)
             ->where('status', 'scheduled')

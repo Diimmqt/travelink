@@ -78,7 +78,10 @@ class ScheduleDetail extends Component
 
     public function selectSeat($seatId)
     {
-        $seat = Seat::find($seatId);
+        $seat = Seat::where('id', $seatId)
+            ->where('schedule_id', $this->schedule->id)
+            ->first();
+
         if (!$seat || $seat->effective_status !== 'available') {
             // If already in selectedSeats, allow unselecting
             if (in_array($seatId, $this->selectedSeats)) {
@@ -110,13 +113,16 @@ class ScheduleDetail extends Component
         $hasPickup = $this->jemputPoints->isNotEmpty();
         $hasDropoff = $this->turunPoints->isNotEmpty();
 
-        if ($hasPickup && empty($this->pickup_point_id)) {
-            session()->flash('error', 'Silakan pilih titik jemput terlebih dahulu.');
+        $validPickupIds = $this->jemputPoints->pluck('id')->toArray();
+        $validDropoffIds = $this->turunPoints->pluck('id')->toArray();
+
+        if ($hasPickup && (empty($this->pickup_point_id) || !in_array($this->pickup_point_id, $validPickupIds))) {
+            session()->flash('error', 'Silakan pilih titik jemput yang valid terlebih dahulu.');
             return;
         }
 
-        if ($hasDropoff && empty($this->dropoff_point_id)) {
-            session()->flash('error', 'Silakan pilih titik turun terlebih dahulu.');
+        if ($hasDropoff && (empty($this->dropoff_point_id) || !in_array($this->dropoff_point_id, $validDropoffIds))) {
+            session()->flash('error', 'Silakan pilih titik turun yang valid terlebih dahulu.');
             return;
         }
 
@@ -134,11 +140,15 @@ class ScheduleDetail extends Component
                     ->where('created_at', '<', now()->subMinutes(10))
                     ->update(['status' => 'expired']);
 
-                // Lock each selected seat
+                // Lock each selected seat, ensuring seat belongs to this schedule
                 foreach ($this->selectedSeats as $seatId) {
-                    $seat = Seat::where('id', $seatId)->lockForUpdate()->first();
+                    $seat = Seat::where('id', $seatId)
+                        ->where('schedule_id', $this->schedule->id)
+                        ->lockForUpdate()
+                        ->first();
+
                     if (!$seat) {
-                        throw new \Exception('Kursi tidak ditemukan.');
+                        throw new \Exception('Kursi tidak ditemukan pada jadwal ini.');
                     }
 
                     if ($seat->effective_status !== 'available') {

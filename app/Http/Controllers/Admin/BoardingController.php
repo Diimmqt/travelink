@@ -52,16 +52,31 @@ class BoardingController extends Controller
         }
 
         $token = trim($token);
-        $cleanToken = strtolower(str_replace(['-', ' '], '', $token));
+        $cleanAlphanumeric = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $token));
 
-        $ticket = Ticket::with(['schedule.route', 'schedule.vehicle', 'seat', 'user', 'pickupPoint', 'dropoffPoint'])
-            ->where(function ($q) use ($token, $cleanToken) {
-                $q->where('qr_token', $token)
-                  ->orWhere('qr_token', strtolower($token))
-                  ->orWhere('qr_token', 'LIKE', strtolower($token) . '%')
-                  ->orWhereRaw("REPLACE(qr_token, '-', '') LIKE ?", [$cleanToken . '%']);
-            })
-            ->first();
+        // Validasi panjang minimum kode (minimal 8 karakter heksadesimal atau UUID) untuk mencegah blind guessing / brute force
+        if (strlen($cleanAlphanumeric) < 8) {
+            return redirect()->route('admin.boarding.index')->with('validation_result', [
+                'success' => false,
+                'title' => 'Ditolak',
+                'message' => 'Kode tiket harus terdiri dari minimal 8 karakter kode unik atau kode QR lengkap.',
+                'ticket' => null
+            ]);
+        }
+
+        $query = Ticket::with(['schedule.route', 'schedule.vehicle', 'seat', 'user', 'pickupPoint', 'dropoffPoint']);
+
+        if (\Illuminate\Support\Str::isUuid($token)) {
+            // Pencocokan eksak UUID jika formatnya adalah full UUID
+            $ticket = $query->where('qr_token', $token)->first();
+        } elseif (strlen($cleanAlphanumeric) === 32) {
+            // Full UUID tanpa tanda minus
+            $ticket = $query->whereRaw("REPLACE(qr_token, '-', '') = ?", [$cleanAlphanumeric])->first();
+        } else {
+            // Pencocokan 8 karakter kode unik awal (hanya karakter heksadesimal yang sudah disanitasi)
+            $hexPrefix = substr($cleanAlphanumeric, 0, 8);
+            $ticket = $query->where('qr_token', 'LIKE', $hexPrefix . '%')->first();
+        }
 
         if (!$ticket) {
             return redirect()->route('admin.boarding.index')->with('validation_result', [

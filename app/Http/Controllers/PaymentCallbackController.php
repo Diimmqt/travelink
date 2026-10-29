@@ -14,7 +14,10 @@ class PaymentCallbackController extends Controller
     public function handle(Request $request, MidtransService $midtrans)
     {
         $payload = $request->all();
-        Log::info('Midtrans Webhook Received', $payload);
+        Log::info('Midtrans Webhook Received for Order: ' . ($payload['order_id'] ?? 'unknown'), [
+            'status_code'        => $payload['status_code'] ?? null,
+            'transaction_status' => $payload['transaction_status'] ?? null,
+        ]);
 
         try {
             $result = $midtrans->handleNotification($payload);

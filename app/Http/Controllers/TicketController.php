@@ -16,46 +16,31 @@ class TicketController extends Controller
             abort(403, 'Anda tidak memiliki akses ke tiket ini.');
         }
 
-        // Jika status masih pending, coba sinkronkan status dengan Midtrans atau query params dari redirect
+        // Jika status masih pending, lakukan sinkronisasi status HANYA melalui query API langsung ke server Midtrans (Server-to-Server)
         if ($ticket->status === 'pending') {
-            $queryTrxStatus = request()->query('transaction_status');
-            $statusCode     = request()->query('status_code');
+            try {
+                $transaction = $ticket->transaction;
+                if ($transaction && $transaction->idempotency_key) {
+                    \Midtrans\Config::$serverKey = config('midtrans.server_key');
+                    \Midtrans\Config::$isProduction = config('midtrans.is_production');
+                    \Midtrans\Config::$curlOptions = [
+                        CURLOPT_TIMEOUT => 5,
+                        CURLOPT_CONNECTTIMEOUT => 4,
+                    ];
 
-            if ($queryTrxStatus === 'settlement' || $queryTrxStatus === 'capture' || $statusCode === '200') {
-                $ticket->update(['status' => 'paid']);
-                $ticket->seat?->update(['status' => 'booked', 'locked_until' => null]);
-                $ticket->transaction?->update(['status' => 'success']);
+                    $res = \Midtrans\Transaction::status($transaction->idempotency_key);
+                    $trxStatus = is_object($res) ? ($res->transaction_status ?? null) : ($res['transaction_status'] ?? null);
+                    $fraudStatus = is_object($res) ? ($res->fraud_status ?? null) : ($res['fraud_status'] ?? null);
 
-                if ($ticket->transaction_id) {
-                    Ticket::where('transaction_id', $ticket->transaction_id)->update(['status' => 'paid']);
-                    $allTxTickets = Ticket::with('seat')->where('transaction_id', $ticket->transaction_id)->get();
-                    foreach ($allTxTickets as $txTicket) {
-                        $txTicket->seat?->update(['status' => 'booked', 'locked_until' => null]);
-                    }
-                }
-                $ticket->refresh();
-            } else {
-                try {
-                    $transaction = $ticket->transaction;
-                    if ($transaction && $transaction->idempotency_key) {
-                        \Midtrans\Config::$serverKey = config('midtrans.server_key');
-                        \Midtrans\Config::$isProduction = config('midtrans.is_production');
-                        \Midtrans\Config::$curlOptions = [
-                            CURLOPT_TIMEOUT => 5,
-                            CURLOPT_CONNECTTIMEOUT => 4,
-                        ];
-
-                        $res = \Midtrans\Transaction::status($transaction->idempotency_key);
-                        $trxStatus = is_object($res) ? ($res->transaction_status ?? null) : ($res['transaction_status'] ?? null);
-                        $fraudStatus = is_object($res) ? ($res->fraud_status ?? null) : ($res['fraud_status'] ?? null);
-
-                        if ($trxStatus === 'settlement' || ($trxStatus === 'capture' && $fraudStatus === 'accept')) {
+                    if ($trxStatus === 'settlement' || ($trxStatus === 'capture' && $fraudStatus === 'accept')) {
+                        \Illuminate\Support\Facades\DB::transaction(function () use ($ticket, $transaction, $res) {
                             $ticket->update(['status' => 'paid']);
                             $ticket->seat?->update(['status' => 'booked', 'locked_until' => null]);
                             $transaction->update([
                                 'status' => 'success',
                                 'payment_method' => is_object($res) ? ($res->payment_type ?? null) : ($res['payment_type'] ?? null),
                             ]);
+
                             if ($ticket->transaction_id) {
                                 Ticket::where('transaction_id', $ticket->transaction_id)->update(['status' => 'paid']);
                                 $allTxTickets = Ticket::with('seat')->where('transaction_id', $ticket->transaction_id)->get();
@@ -63,11 +48,14 @@ class TicketController extends Controller
                                     $txTicket->seat?->update(['status' => 'booked', 'locked_until' => null]);
                                 }
                             }
-                            $ticket->refresh();
-                        } elseif (in_array($trxStatus, ['deny', 'expire', 'cancel'])) {
+                        });
+                        $ticket->refresh();
+                    } elseif (in_array($trxStatus, ['deny', 'expire', 'cancel'])) {
+                        \Illuminate\Support\Facades\DB::transaction(function () use ($ticket, $transaction) {
                             $ticket->update(['status' => 'expired']);
                             $ticket->seat?->update(['status' => 'available', 'locked_until' => null]);
                             $transaction->update(['status' => 'failed']);
+
                             if ($ticket->transaction_id) {
                                 Ticket::where('transaction_id', $ticket->transaction_id)->update(['status' => 'expired']);
                                 $allTxTickets = Ticket::with('seat')->where('transaction_id', $ticket->transaction_id)->get();
@@ -75,12 +63,12 @@ class TicketController extends Controller
                                     $txTicket->seat?->update(['status' => 'available', 'locked_until' => null]);
                                 }
                             }
-                            $ticket->refresh();
-                        }
+                        });
+                        $ticket->refresh();
                     }
-                } catch (\Throwable $e) {
-                    // Ignore sync error in offline/local mock
                 }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Midtrans sync error on ticket view: ' . $e->getMessage());
             }
         }
 

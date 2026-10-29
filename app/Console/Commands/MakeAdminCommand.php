@@ -53,8 +53,9 @@ class MakeAdminCommand extends Command
             'nama' => $nama,
             'email' => $email,
             'password' => Hash::make($password),
-            'role' => 'admin',
         ]);
+        $user->role = 'admin';
+        $user->save();
 
         $this->info("Berhasil! Akun Admin '{$user->nama}' ({$user->email}) telah dibuat.");
         return Command::SUCCESS;
