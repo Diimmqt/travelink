@@ -1,10 +1,12 @@
 <?php
 
+// Mengimpor handler dan processor bawaan dari library Monolog untuk mengelola tujuan dan format pencatatan log.
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
 
+// Mengembalikan konfigurasi saluran pencatatan log (logging) aplikasi.
 return [
 
     /*
@@ -18,6 +20,7 @@ return [
     |
     */
 
+    // Channel log utama yang dipakai aplikasi (bawaan: 'stack' untuk menggabungkan beberapa channel sekaligus).
     'default' => env('LOG_CHANNEL', 'stack'),
 
     /*
@@ -31,6 +34,7 @@ return [
     |
     */
 
+    // Channel khusus untuk mencatat peringatan fitur PHP/library yang sudah usang (deprecated) dan opsi pelacakan stack trace-nya.
     'deprecations' => [
         'channel' => env('LOG_DEPRECATIONS_CHANNEL', 'null'),
         'trace' => env('LOG_DEPRECATIONS_TRACE', false),
@@ -50,14 +54,17 @@ return [
     |
     */
 
+    // Daftar lengkap channel log yang bisa dipilih beserta pengaturan driver, lokasi file, dan level minimum log-nya.
     'channels' => [
 
+        // Menggabungkan beberapa channel log (dipisah koma di LOG_STACK) agar satu log bisa dikirim ke banyak tujuan sekaligus.
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', env('LOG_STACK', 'single')),
             'ignore_exceptions' => false,
         ],
 
+        // Menulis semua catatan log ke dalam satu file tunggal di storage/logs/laravel.log.
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
@@ -65,6 +72,7 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Membuat file log baru setiap hari dan otomatis menghapus file log lama setelah jumlah hari tertentu (bawaan 14 hari).
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
@@ -73,6 +81,7 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Mengirim notifikasi log berlevel kritis (atau sesuai LOG_LEVEL) ke Slack menggunakan webhook URL.
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
@@ -82,6 +91,7 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Mengirim log ke layanan eksternal Papertrail melalui koneksi Syslog UDP/TLS.
         'papertrail' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
@@ -94,6 +104,7 @@ return [
             'processors' => [PsrLogMessageProcessor::class],
         ],
 
+        // Menulis log ke aliran error standar (php://stderr), berguna saat aplikasi berjalan di container/Docker.
         'stderr' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
@@ -105,6 +116,7 @@ return [
             'processors' => [PsrLogMessageProcessor::class],
         ],
 
+        // Mengirim log ke sistem syslog bawaan server/OS.
         'syslog' => [
             'driver' => 'syslog',
             'level' => env('LOG_LEVEL', 'debug'),
@@ -112,17 +124,20 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Mengirim log ke fungsi error_log bawaan PHP.
         'errorlog' => [
             'driver' => 'errorlog',
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
         ],
 
+        // Channel pembuangan yang mengabaikan semua log (tidak mencatat apa pun).
         'null' => [
             'driver' => 'monolog',
             'handler' => NullHandler::class,
         ],
 
+        // Channel darurat yang dipakai Laravel jika channel utama gagal dijalankan.
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

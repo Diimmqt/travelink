@@ -1,6 +1,8 @@
+{{-- Halaman tampilan e-ticket / boarding pass beserta QR code dan tombol cetak --}}
 <x-app-layout :hide-nav="true">
     <style>
         /* ── Page background ─────────────────────────────── */
+        /* Latar belakang gradasi lembut untuk seluruh halaman e-tiket */
         .ticket-page-bg {
             min-height: 100vh;
             background: linear-gradient(145deg, #f0f4ff 0%, #f8fafc 50%, #fff7f0 100%);
@@ -9,6 +11,7 @@
         }
 
         /* ── Top navbar bar ──────────────────────────────── */
+        /* Bilah navigasi atas yang menempel (sticky) dengan efek blur latar */
         .ticket-topbar {
             background: #fff;
             border-bottom: 1px solid #e2e8f0;
@@ -24,6 +27,7 @@
         }
 
         /* ── Boarding pass wrapper ───────────────────────── */
+        /* Pembungkus tengah agar kartu boarding pass berada rapi di tengah layar */
         .boarding-pass-wrapper {
             flex: 1;
             display: flex;
@@ -41,6 +45,7 @@
         }
 
         /* ── Status alert ────────────────────────────────── */
+        /* Kotak notifikasi status tiket dengan variasi warna sesuai status (paid, pending, refund, expired) */
         .status-alert {
             display: flex;
             align-items: center;
@@ -57,6 +62,7 @@
         .status-alert.refund  { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
         .status-alert.expired { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
 
+        /* Titik indikator status dengan animasi denyut (pulse) untuk status aktif/menunggu */
         .status-dot {
             width: 8px; height: 8px;
             border-radius: 50%;
@@ -72,6 +78,7 @@
         }
 
         /* ── The boarding pass card ──────────────────────── */
+        /* Kartu utama boarding pass: 1 kolom di mobile, berubah menjadi 3 kolom (detail | garis sobekan | QR) di desktop */
         .pass-card {
             background: #fff;
             border: 1px solid #e2e8f0;
@@ -411,6 +418,7 @@
         .btn-refund:hover { background: #f0fdf4; }
 
         /* ── Print styles ────────────────────────────────── */
+        /* Aturan CSS khusus saat halaman dicetak (window.print): sembunyikan navbar, tombol aksi, dan alert status */
         @media print {
             .ticket-topbar, .action-bar, .status-alert { display: none !important; }
             .ticket-page-bg { background: #fff !important; min-height: unset; }
@@ -422,6 +430,7 @@
     <div class="ticket-page-bg">
 
         {{-- ── Top navigation bar ── --}}
+        {{-- Bilah navigasi atas khusus halaman tiket (disembunyikan saat mode cetak dengan class print:hidden) --}}
         <div class="ticket-topbar print:hidden">
             <a href="{{ route('home') }}" class="flex items-center gap-2.5" wire:navigate>
                 <div class="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-bold text-sm">
@@ -436,7 +445,9 @@
             <div class="boarding-pass-container">
 
                 {{-- ── Status alert ── --}}
+                {{-- Menampilkan kotak informasi & aksi berbeda sesuai status tiket saat ini --}}
                 @if($ticket->status === 'paid')
+                    {{-- Jika lunas: tampilkan info aktif dan form tombol pengajuan refund dengan konfirmasi JavaScript --}}
                     <div class="status-alert paid print:hidden">
                         <div class="flex items-center gap-2">
                             <span class="status-dot green"></span>
@@ -449,11 +460,13 @@
                         </form>
                     </div>
                 @elseif($ticket->status === 'refund_requested')
+                    {{-- Jika sedang mengajukan refund: tampilkan pesan menunggu persetujuan admin --}}
                     <div class="status-alert refund print:hidden">
                         <span class="status-dot amber"></span>
                         <span>Permohonan Refund / Reschedule Anda sedang menunggu persetujuan Admin.</span>
                     </div>
                 @elseif($ticket->status === 'pending')
+                    {{-- Jika belum dibayar: tampilkan pengingat dan tombol muat ulang untuk cek status pembayaran --}}
                     <div class="status-alert pending print:hidden">
                         <div class="flex items-center gap-2">
                             <span class="status-dot amber"></span>
@@ -464,12 +477,14 @@
                         </a>
                     </div>
                 @elseif(in_array($ticket->status, ['expired','refunded']))
+                    {{-- Jika kedaluwarsa atau sudah direfund: tampilkan status tidak aktif --}}
                     <div class="status-alert expired print:hidden">
                         <span class="status-dot red"></span>
                         <span>Tiket tidak aktif &mdash; Status: <strong>{{ strtoupper($ticket->status) }}</strong></span>
                     </div>
                 @endif
 
+                {{-- Jika transaksi ini memesan lebih dari 1 kursi/penumpang, tampilkan tab navigasi antar penumpang dalam rombongan --}}
                 @if(isset($relatedTickets) && $relatedTickets->count() > 1)
                     <div class="bg-white border border-brex-mist rounded-brex p-3.5 flex items-center justify-between gap-3 overflow-x-auto print:hidden">
                         <div class="flex items-center gap-2 shrink-0">
@@ -498,6 +513,7 @@
                             <div class="flex items-start justify-between gap-3 mb-1">
                                 <span class="pass-label">Boarding Pass</span>
                                 @php
+                                    // Memilih class CSS warna badge status berdasarkan nilai $ticket->status menggunakan match()
                                     $chipClass = match($ticket->status) {
                                         'paid', 'boarded' => 'chip-paid',
                                         'pending'          => 'chip-pending',
@@ -574,13 +590,16 @@
                     </div>
 
                     {{-- ── RIGHT: QR stub ── --}}
+                    {{-- Panel QR Code: menampilkan SVG QR asli jika tiket berstatus paid/boarded, atau ikon gembok jika belum lunas --}}
                     <div class="pass-right">
                         @if(in_array($ticket->status, ['paid', 'boarded']) && $qrCode)
                             <div class="qr-box">
+                                {{-- Mencetak markup SVG QR Code mentah (tanpa escaping HTML) dari controller --}}
                                 {!! $qrCode !!}
                             </div>
                             <div class="qr-title">Boarding QR Code</div>
                             <p class="qr-hint">Pindai kode QR ini saat menaiki armada di titik penjemputan.</p>
+                            {{-- Menampilkan 8 karakter pertama token QR dalam huruf kapital sebagai kode referensi singkat --}}
                             <span class="qr-token">{{ strtoupper(substr($ticket->qr_token, 0, 8)) }}</span>
                         @else
                             <div class="qr-locked-box">
@@ -600,6 +619,7 @@
                 </div>{{-- end .pass-card --}}
 
                 {{-- ── Action bar ── --}}
+                {{-- Bilah tombol bawah: kembali ke riwayat dan tombol cetak boarding pass (khusus tiket lunas/boarded) --}}
                 <div class="action-bar print:hidden">
                     <a href="{{ route('tickets.history') }}" wire:navigate class="btn-back">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -608,6 +628,7 @@
                         Riwayat Pemesanan
                     </a>
                     @if(in_array($ticket->status, ['paid', 'boarded']))
+                        {{-- Memanggil dialog cetak bawaan browser menggunakan window.print() --}}
                         <button onclick="window.print()" class="btn-print">
                             <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -1,10 +1,14 @@
+{{-- Halaman utama (landing page) publik aplikasi Travelink --}}
 <!DOCTYPE html>
+{{-- Mengatur bahasa dokumen HTML mengikuti konfigurasi locale Laravel (mengganti '_' menjadi '-') --}}
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- Token CSRF untuk melindungi pengiriman form dari serangan Cross-Site Request Forgery --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- Judul tab browser diambil dari konfigurasi app.name dengan fallback 'Travelink' --}}
     <title>{{ config('app.name', 'Travelink') }} - Shuttle Travel Antar Kota Nyaman &amp; Cepat</title>
     <meta name="description" content="Pesan tiket shuttle travel antar kota secara cepat,tepat dan amanah.Booking mudah di Travelink.">
 
@@ -14,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles & Scripts -->
+    {{-- Memuat aset CSS dan JS hasil kompilasi Vite serta style bawaan Livewire --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
@@ -22,6 +27,7 @@
     <!-- ========================================================================= -->
     <!-- 1. NAVBAR (Sticky Header) — BREX LIGHT THEME                              -->
     <!-- ========================================================================= -->
+    {{-- Header menempel di atas layar (sticky) dengan state Alpine.js 'mobileOpen' untuk menu mobile --}}
     <header x-data="{ mobileOpen: false }"
             class="sticky top-0 z-50 bg-white border-b border-brex-mist">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,6 +35,7 @@
 
                 <!-- Left: Logo & Wordmark Travelink -->
                 <div class="flex items-center gap-8">
+                    {{-- Tautan logo yang mengarahkan ke rute halaman utama ('home') --}}
                     <a href="{{ route('home') }}" class="flex items-center gap-2.5 group">
                         <div class="w-9 h-9 rounded-brex bg-brex-ink flex items-center justify-center text-white font-bold text-lg">
                             T
@@ -39,6 +46,7 @@
                     </a>
 
                     <!-- Center Navigation Links -->
+                    {{-- Menu navigasi desktop yang melompat ke masing-masing bagian (anchor) halaman --}}
                     <nav class="hidden md:flex items-center gap-1 lg:gap-2 ml-4">
                         <a href="#beranda" class="px-3.5 py-2 text-sm font-medium text-brex-ink hover:bg-brex-fog rounded-brex transition duration-150 tracking-brex-24">
                             Beranda
@@ -56,14 +64,18 @@
                 </div>
 
                 <!-- Right: Action Buttons -->
+                {{-- Tombol aksi sisi kanan: berbeda tampilan antara pengguna yang sudah login (@auth) dan tamu (@else) --}}
                 <div class="hidden md:flex items-center gap-4">
                     @auth
+                        {{-- Tautan ke halaman riwayat tiket pengguna yang sedang login --}}
                         <a href="{{ route('tickets.history') }}" class="text-sm font-medium text-brex-graphite hover:text-brex-ink tracking-brex-24 transition">
                             Tiket Saya
                         </a>
+                        {{-- Menampilkan sapaan beserta nama pengguna (prioritas kolom 'nama', fallback ke 'name') --}}
                         <span class="text-sm text-brex-pewter font-normal tracking-brex-24">
                             Halo, <span class="text-brex-ink font-medium">{{ auth()->user()->nama ?? auth()->user()->name }}</span>
                         </span>
+                        {{-- Form POST untuk keluar (logout) agar aman dengan proteksi token CSRF --}}
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit"
@@ -86,6 +98,7 @@
                 </div>
 
                 <!-- Mobile Menu Button -->
+                {{-- Tombol hamburger untuk membuka/menutup menu navigasi pada layar kecil (mobile) --}}
                 <div class="flex md:hidden">
                     <button @click="mobileOpen = !mobileOpen"
                             type="button"
@@ -103,6 +116,7 @@
         </div>
 
         <!-- Mobile Dropdown Navigation -->
+        {{-- Panel dropdown mobile yang tampil saat 'mobileOpen' bernilai true, lengkap dengan animasi transisi --}}
         <div x-show="mobileOpen"
              x-transition:enter="transition ease-out duration-150"
              x-transition:enter-start="opacity-0 -translate-y-2"
@@ -125,6 +139,7 @@
                 Tentang
             </a>
 
+            {{-- Tombol aksi versi mobile menyesuaikan status login pengguna --}}
             <div class="pt-4 border-t border-brex-mist flex flex-col gap-3">
                 @auth
                     <a href="{{ route('tickets.history') }}" class="w-full py-2.5 text-center brex-btn-secondary">
@@ -208,6 +223,7 @@
                 </div>
 
                 <!-- Right Column: Ticket Search Card Form -->
+                {{-- Panel kartu pencarian jadwal tiket yang memanggil komponen Livewire 'schedule-search' --}}
                 <div id="booking-panel" class="lg:col-span-5">
                     <div class="brex-card p-6 sm:p-8">
                         <div class="mb-6">
@@ -218,6 +234,7 @@
                                 Tentukan rute dan tanggal keberangkatan Anda
                             </p>
                         </div>
+                        {{-- Komponen interaktif Livewire untuk memilih kota asal, tujuan, dan tanggal --}}
                         <livewire:schedule-search />
                     </div>
                 </div>
@@ -225,6 +242,7 @@
             </div>
 
             <!-- Popular Routes Strip -->
+            {{-- Menampilkan daftar rute populer hanya jika koleksi $routes memiliki data --}}
             @if($routes->isNotEmpty())
             <div class="mt-20 pt-12 border-t border-brex-mist">
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
@@ -237,6 +255,7 @@
                     </a>
                 </div>
 
+                {{-- Perulangan untuk merender kartu setiap rute perjalanan populer --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach($routes as $route)
                     <div class="brex-card p-5 hover:border-brex-ink transition-colors duration-150">
@@ -257,6 +276,7 @@
                             </div>
                             <div class="text-right shrink-0">
                                 <span class="text-xs text-brex-pewter block">Mulai</span>
+                                {{-- Memformat angka harga menjadi format Rupiah dengan pemisah ribuan titik --}}
                                 <span class="text-base font-semibold text-brex-ink tracking-brex-24">
                                     Rp {{ number_format($route->harga, 0, ',', '.') }}
                                 </span>
@@ -287,8 +307,10 @@
                 </p>
             </div>
 
+            {{-- Mengecek apakah data titik jemput yang dikelompokkan per kota tersedia --}}
             @if($pickupPointsByCity->isNotEmpty())
                 <div class="space-y-12">
+                    {{-- Perulangan tingkat pertama: mengelompokkan titik jemput berdasarkan nama kota ($city) --}}
                     @foreach($pickupPointsByCity as $city => $points)
                     <div>
                         <!-- City Header -->
@@ -304,6 +326,7 @@
                         </div>
 
                         <!-- Location Cards Grid: White bg, radius 12px, padding 24-32px, NO shadow -->
+                        {{-- Perulangan tingkat kedua: menampilkan setiap lokasi pool di dalam kota tersebut --}}
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach($points as $point)
                             <div class="brex-card p-6 lg:p-8 flex flex-col justify-between space-y-4">
@@ -332,6 +355,7 @@
                     @endforeach
                 </div>
             @else
+                {{-- Pesan cadangan jika belum ada data titik penjemputan --}}
                 <div class="brex-card p-12 text-center">
                     <p class="text-sm text-brex-steel">Informasi pool titik penjemputan sedang diperbarui.</p>
                 </div>
@@ -482,6 +506,7 @@
                 </div>
 
                 <!-- Right Column: Operational Stats Grid -->
+                {{-- Menampilkan statistik operasional (jumlah rute, pool, dan armada) dari array $stats --}}
                 <div class="lg:col-span-6">
                     <div class="grid grid-cols-2 gap-4">
                         <div class="brex-card p-6 text-left">
@@ -529,6 +554,7 @@
     <!-- ========================================================================= -->
     <!-- 6. FOOTER — ABYSS DARK FRAME                                              -->
     <!-- ========================================================================= -->
+    {{-- Bagian footer gelap berisi informasi brand, tautan cepat, dan kontak Travelink --}}
     <footer class="bg-brex-abyss text-white py-12 lg:py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -592,6 +618,7 @@
 
             <!-- Bottom Copyright -->
             <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-brex-mist">
+                {{-- Menampilkan tahun saat ini secara dinamis menggunakan fungsi PHP date('Y') --}}
                 <p>&copy; {{ date('Y') }} Travelink Indonesia. Hak Cipta Dilindungi.</p>
                 <div class="flex items-center gap-6">
                     <a href="#" class="hover:text-white transition">Privasi</a>
@@ -603,6 +630,7 @@
         </div>
     </footer>
 
+    {{-- Memuat skrip JavaScript Livewire agar komponen interaktif berjalan --}}
     @livewireScripts
 </body>
 </html>

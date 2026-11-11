@@ -10,8 +10,10 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Volt\Component;
 
+// Komponen Volt untuk halaman reset password menggunakan layout tamu (layouts.guest)
 new #[Layout('layouts.guest')] class extends Component
 {
+    // #[Locked] menjaga agar nilai token reset dari URL tidak dapat dimanipulasi dari sisi klien
     #[Locked]
     public string $token = '';
     public string $email = '';
@@ -20,19 +22,29 @@ new #[Layout('layouts.guest')] class extends Component
 
     /**
      * Mount the component.
+     *
+     * Dijalankan saat komponen pertama kali dimuat untuk mengisi token dari parameter rute
+     * dan alamat email dari query string URL.
+     *
+     * @param  string  $token  Token reset password dari URL.
      */
     public function mount(string $token): void
     {
         $this->token = $token;
 
+        // Ambil parameter 'email' dari query string URL jika tersedia
         $this->email = request()->string('email');
     }
 
     /**
      * Reset the password for the given user.
+     *
+     * Memvalidasi password baru beserta token, memperbarui password di database,
+     * memicu event PasswordReset, lalu mengarahkan pengguna ke halaman login.
      */
     public function resetPassword(): void
     {
+        // Validasi token, email, serta password baru dan konfirmasinya
         $this->validate([
             'token' => ['required'],
             'email' => ['required', 'string', 'email'],
@@ -45,11 +57,13 @@ new #[Layout('layouts.guest')] class extends Component
         $status = Password::reset(
             $this->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) {
+                // Simpan password baru yang sudah di-hash dan buat remember_token baru
                 $user->forceFill([
                     'password' => Hash::make($this->password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
+                // Picu event PasswordReset setelah password berhasil diperbarui
                 event(new PasswordReset($user));
             }
         );
@@ -57,18 +71,22 @@ new #[Layout('layouts.guest')] class extends Component
         // If the password was successfully reset, we will redirect the user back to
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
+        // Jika proses reset gagal (misal token kedaluwarsa), tampilkan error pada field email
         if ($status != Password::PASSWORD_RESET) {
             $this->addError('email', __($status));
 
             return;
         }
 
+        // Simpan pesan sukses ke session flash agar tampil di halaman login
         Session::flash('status', __($status));
 
+        // Arahkan pengguna ke halaman login dengan navigasi SPA Livewire
         $this->redirectRoute('login', navigate: true);
     }
 }; ?>
 
+{{-- Layout halaman reset password 2 kolom: panel visual kiri dan formulir kanan --}}
 <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
     <!-- Left Column: Travel Visual Panel (Hidden on mobile) -->
     <div class="hidden lg:flex lg:col-span-7 bg-brand-navy-950 text-white relative overflow-hidden flex-col justify-between p-16">
@@ -97,6 +115,7 @@ new #[Layout('layouts.guest')] class extends Component
     </div>
 
     <!-- Right Column: Reset Password Form -->
+    {{-- Kolom kanan: formulir pengisian email dan password baru --}}
     <div class="lg:col-span-5 flex flex-col justify-center px-8 sm:px-16 py-12 bg-white">
         <div class="max-w-md w-full mx-auto">
             <div class="flex items-center gap-2 lg:hidden mb-8">
@@ -106,6 +125,7 @@ new #[Layout('layouts.guest')] class extends Component
             <h2 class="font-heading text-3xl font-bold text-brand-navy-950 mb-2">Reset Password</h2>
             <p class="text-brand-navy-500 text-sm mb-8">Silakan buat kata sandi baru untuk akun Anda.</p>
 
+            {{-- Form memanggil method resetPassword saat disubmit --}}
             <form wire:submit="resetPassword" class="space-y-5">
                 <!-- Email Address -->
                 <div>

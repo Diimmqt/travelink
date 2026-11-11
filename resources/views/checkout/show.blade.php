@@ -1,4 +1,6 @@
+{{-- Halaman ringkasan checkout pemesanan tiket sebelum melakukan pembayaran via Midtrans --}}
 <x-app-layout>
+    {{-- Judul halaman pada slot header layout utama --}}
     <x-slot name="header">
         {{ __('Checkout Pemesanan') }}
     </x-slot>
@@ -7,6 +9,7 @@
         <div class="max-w-3xl mx-auto">
 
             <!-- Alert Error Box -->
+            {{-- Kotak pesan error dinamis dari JavaScript (disembunyikan secara default dengan class 'hidden') --}}
             <div id="payment-error" class="hidden mb-6 p-4 rounded-brex flex items-center gap-3 text-xs font-medium bg-red-50 border border-red-200 text-red-600">
                 <svg class="w-4 h-4 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -14,6 +17,7 @@
                 <span id="payment-error-text"></span>
             </div>
 
+            {{-- Menampilkan pesan error dari session server jika ada kegagalan validasi/proses sebelumnya --}}
             @if(session('error'))
                 <div class="mb-6 p-4 rounded-brex flex items-center gap-3 text-xs font-medium bg-red-50 border border-red-200 text-red-600">
                     <svg class="w-4 h-4 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,6 +29,7 @@
 
             <div class="brex-card overflow-hidden">
                 <!-- Header Tiket -->
+                {{-- Menampilkan rute keberangkatan-tujuan serta tanggal berangkat dalam format Indonesia --}}
                 <div class="p-6 md:p-8 border-b border-brex-mist bg-brex-fog">
                     <div class="flex items-center justify-between mb-3">
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-brex-chip text-xs font-semibold uppercase tracking-wider bg-white border border-brex-mist text-brex-ink">
@@ -64,6 +69,7 @@
                     </div>
 
                     <!-- Lokasi Naik/Turun -->
+                    {{-- Menampilkan titik jemput (naik) dan titik turun beserta fallback jika data tidak ditemukan --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-brex-mist">
                         <div>
                             <span class="block text-xs uppercase tracking-wider mb-1 text-brex-pewter font-medium">Titik Jemput (Naik)</span>
@@ -78,6 +84,7 @@
                     </div>
 
                     <!-- Rincian Daftar Penumpang & Kursi -->
+                    {{-- Perulangan untuk menampilkan setiap penumpang beserta nomor kursi yang dipasangkan berdasarkan indeks --}}
                     <div class="pb-6 border-b border-brex-mist space-y-3">
                         <div class="flex items-center justify-between">
                             <span class="block text-xs uppercase tracking-wider text-brex-pewter font-semibold">
@@ -88,6 +95,7 @@
                         <div class="divide-y divide-brex-mist/70 border border-brex-mist rounded-brex overflow-hidden">
                             @foreach($booking['passengers'] as $idx => $passenger)
                                 @php
+                                    // Mencocokkan ID kursi pada indeks penumpang saat ini dengan koleksi objek $seats
                                     $seatId = $booking['seat_ids'][$idx] ?? null;
                                     $assignedSeat = $seats->firstWhere('id', $seatId);
                                 @endphp
@@ -111,6 +119,7 @@
                     </div>
 
                     <!-- Total Pembayaran Card -->
+                    {{-- Ringkasan total harga tiket (jumlah penumpang x harga rute) dan info batas waktu kunci kursi --}}
                     <div class="p-5 rounded-brex bg-brex-fog border border-brex-mist flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <span class="block text-[11px] font-semibold uppercase tracking-wider text-brex-pewter mb-1">
@@ -132,6 +141,7 @@
                     </div>
 
                     <!-- Action Buttons -->
+                    {{-- Tombol kembali untuk mengubah kursi atau tombol untuk memulai proses pembayaran --}}
                     <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                         <a href="{{ route('schedules.detail', $schedule->id) }}"
                            class="brex-btn-secondary px-5 h-12 text-sm font-semibold flex items-center justify-center gap-2 shrink-0">
@@ -159,24 +169,30 @@
     </div>
 
     <!-- Midtrans Snap Script -->
+    {{-- Memuat library JavaScript Midtrans Snap --}}
     <script src="{{ $snapUrl }}" data-client-key="{{ $clientKey }}"></script>
     <script>
+        // Mengambil referensi elemen tombol bayar dan kotak alert error di DOM
         const payButton = document.getElementById('pay-button');
         const payButtonText = document.getElementById('pay-button-text');
         const errorBox = document.getElementById('payment-error');
         const errorText = document.getElementById('payment-error-text');
 
+        // Fungsi pembantu untuk menampilkan pesan error dan menggulir layar ke kotak error
         function showError(message) {
             errorText.textContent = message;
             errorBox.classList.remove('hidden');
             errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
+        // Event listener saat tombol 'Bayar Sekarang' diklik
         payButton.addEventListener('click', function () {
+            // Menonaktifkan tombol sementara untuk mencegah klik ganda saat request diproses
             payButton.disabled = true;
             payButtonText.textContent = 'Menyiapkan Pembayaran...';
             errorBox.classList.add('hidden');
 
+            // Mengirim request POST AJAX ke backend (checkout.process) untuk membuat transaksi & mendapatkan snap_token
             fetch('{{ route("checkout.process") }}', {
                 method: 'POST',
                 headers: {
@@ -188,36 +204,44 @@
             })
             .then(res => res.json())
             .then(data => {
+                // Jika backend mengembalikan gagal, tampilkan pesan error dan aktifkan tombol kembali
                 if (!data.success) {
                     showError(data.message || 'Terjadi kesalahan saat memproses pembayaran.');
                     payButton.disabled = false;
                     payButtonText.textContent = 'Bayar Sekarang — Rp {{ number_format($totalPrice, 0, ',', '.') }}';
+                    // Jika server menyertakan URL redirect (misalnya sesi kedaluwarsa), arahkan setelah 2 detik
                     if (data.redirect) {
                         setTimeout(() => window.location.href = data.redirect, 2000);
                     }
                     return;
                 }
 
+                // Membuka popup pembayaran Midtrans Snap menggunakan token yang diterima dari backend
                 window.snap.pay(data.snap_token, {
+                    // Jika pembayaran berhasil, arahkan ke halaman e-tiket dengan parameter status transaksi
                     onSuccess: function (result) {
                         const trxStatus = (result && result.transaction_status) ? result.transaction_status : 'settlement';
                         const statusCode = (result && result.status_code) ? result.status_code : '200';
                         window.location.href = '/tickets/' + data.ticket_id + '?transaction_status=' + encodeURIComponent(trxStatus) + '&status_code=' + encodeURIComponent(statusCode);
                     },
+                    // Jika pembayaran masih menunggu penyelesaian (pending), arahkan ke halaman tiket berstatus pending
                     onPending: function (result) {
                         window.location.href = '/tickets/' + data.ticket_id + '?transaction_status=pending';
                     },
+                    // Jika pembayaran gagal di popup Midtrans, tampilkan error dan izinkan mencoba lagi
                     onError: function (result) {
                         showError('Pembayaran gagal atau dibatalkan. Silakan coba kembali.');
                         payButton.disabled = false;
                         payButtonText.textContent = 'Coba Bayar Lagi';
                     },
+                    // Jika pengguna menutup popup Snap tanpa menyelesaikan pembayaran, kembalikan teks tombol ke semula
                     onClose: function () {
                         payButton.disabled = false;
                         payButtonText.textContent = 'Bayar Sekarang — Rp {{ number_format($totalPrice, 0, ',', '.') }}';
                     }
                 });
             })
+            // Menangani gangguan jaringan saat menghubungi server
             .catch(err => {
                 showError('Koneksi terganggu. Silakan coba kembali.');
                 payButton.disabled = false;

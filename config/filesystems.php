@@ -1,5 +1,6 @@
 <?php
 
+// Mengembalikan konfigurasi sistem penyimpanan file (lokal maupun cloud) di Laravel.
 return [
 
     /*
@@ -13,6 +14,7 @@ return [
     |
     */
 
+    // Disk penyimpanan bawaan yang digunakan saat aplikasi menyimpan file tanpa menentukan nama disk.
     'default' => env('FILESYSTEM_DISK', 'local'),
 
     /*
@@ -28,14 +30,17 @@ return [
     |
     */
 
+    // Daftar disk penyimpanan file yang tersedia beserta lokasi/kredensialnya masing-masing.
     'disks' => [
 
+        // Disk lokal privat: menyimpan file di storage/app yang tidak bisa diakses langsung dari browser.
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app'),
             'throw' => false,
         ],
 
+        // Disk lokal publik: menyimpan file di storage/app/public agar bisa diakses lewat URL /storage (setelah storage:link).
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
@@ -44,6 +49,7 @@ return [
             'throw' => false,
         ],
 
+        // Disk cloud Amazon S3 (atau layanan kompatibel S3 lainnya seperti MinIO) menggunakan kredensial AWS dari .env.
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -69,6 +75,7 @@ return [
     |
     */
 
+    // Pemetaan symbolic link (shortcut folder) yang dibuat oleh perintah `php artisan storage:link`.
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],

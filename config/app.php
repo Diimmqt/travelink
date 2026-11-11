@@ -1,5 +1,6 @@
 <?php
 
+// Mengembalikan array konfigurasi utama aplikasi Laravel (nama, environment, zona waktu, bahasa, enkripsi, dan mode pemeliharaan).
 return [
 
     /*
@@ -13,6 +14,7 @@ return [
     |
     */
 
+    // Mengambil nama aplikasi dari variabel .env APP_NAME; jika tidak ada, gunakan 'Laravel'.
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
@@ -26,6 +28,7 @@ return [
     |
     */
 
+    // Menentukan lingkungan jalannya aplikasi (misalnya 'local' saat pengembangan atau 'production' saat rilis).
     'env' => env('APP_ENV', 'production'),
 
     /*
@@ -39,6 +42,7 @@ return [
     |
     */
 
+    // Mengaktifkan/menonaktifkan mode debug (true menampilkan detail error lengkap, false hanya halaman error umum).
     'debug' => (bool) env('APP_DEBUG', false),
 
     /*
@@ -52,6 +56,7 @@ return [
     |
     */
 
+    // Alamat URL dasar aplikasi, dipakai terutama oleh perintah Artisan untuk membentuk tautan yang valid.
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
@@ -65,6 +70,7 @@ return [
     |
     */
 
+    // Zona waktu bawaan untuk seluruh fungsi tanggal dan waktu PHP di dalam aplikasi.
     'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
@@ -78,10 +84,13 @@ return [
     |
     */
 
+    // Bahasa utama yang digunakan untuk terjemahan teks di aplikasi.
     'locale' => env('APP_LOCALE', 'en'),
 
+    // Bahasa cadangan jika terjemahan pada bahasa utama tidak ditemukan.
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
+    // Bahasa yang dipakai oleh library Faker saat membuat data dummy/palsu untuk pengujian atau seeder.
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*
@@ -95,10 +104,13 @@ return [
     |
     */
 
+    // Algoritma enkripsi simetris yang digunakan Laravel untuk mengamankan data sensitif (seperti cookie dan session).
     'cipher' => 'AES-256-CBC',
 
+    // Kunci rahasia utama aplikasi dari .env APP_KEY yang dipakai untuk proses enkripsi dan dekripsi.
     'key' => env('APP_KEY'),
 
+    // Daftar kunci enkripsi lama (dipisah koma di .env) agar data terenkripsi lama tetap bisa dibaca setelah rotasi kunci.
     'previous_keys' => [
         ...array_filter(
             explode(',', env('APP_PREVIOUS_KEYS', ''))
@@ -118,6 +130,7 @@ return [
     |
     */
 
+    // Pengaturan driver penyimpanan status mode pemeliharaan (maintenance mode) ketika aplikasi sedang dinonaktifkan sementara.
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),

@@ -1,3 +1,4 @@
+{{-- Halaman error 403 khusus ketika pengguna tidak memiliki hak akses (misalnya masuk halaman admin/kasir) --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -7,9 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {{-- Memuat CSS dan JS utama aplikasi melalui Vite --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-brex-fog font-sans antialiased text-brex-graphite min-h-screen flex items-center justify-center p-4">
+    {{-- Kartu pemberitahuan error 403 di tengah layar --}}
     <div class="max-w-md w-full bg-brex-paper border border-brex-mist rounded-brex p-8 text-center shadow-none">
         <div class="w-16 h-16 bg-brex-fog border border-brex-mist rounded-full flex items-center justify-center mx-auto mb-6 text-brex-ember">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,9 +21,11 @@
         </div>
         <h1 class="text-3xl font-semibold text-brex-ink mb-2 tracking-brex-24">403</h1>
         <h2 class="text-xl font-semibold text-brex-ink mb-3 tracking-brex-24">Akses Ditolak</h2>
+        {{-- Menampilkan pesan error dari objek $exception jika tersedia, atau pesan default jika kosong --}}
         <p class="text-sm text-brex-graphite mb-8 leading-relaxed">
             {{ $exception->getMessage() ?: 'Anda tidak memiliki hak akses untuk membuka halaman administrator ini.' }}
         </p>
+        {{-- Tombol navigasi kembali ke beranda --}}
         <a href="{{ route('home') }}" class="inline-flex items-center justify-center w-full px-6 py-3 bg-brex-ember text-white font-medium rounded-brex hover:bg-[#e04f00] transition duration-150 ease-in-out shadow-none">
             Kembali ke Beranda
         </a>

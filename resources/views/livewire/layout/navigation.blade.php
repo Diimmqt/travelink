@@ -3,19 +3,27 @@
 use App\Livewire\Actions\Logout;
 use Livewire\Volt\Component;
 
+// Komponen Livewire Volt untuk navbar utama pengguna yang sudah login
 new class extends Component
 {
     /**
      * Log the current user out of the application.
+     *
+     * Menjalankan action Logout untuk mengakhiri sesi pengguna, lalu mengarahkan ke beranda (/).
+     *
+     * @param  Logout  $logout  Instance action class untuk proses logout.
      */
     public function logout(Logout $logout): void
     {
+        // Panggil invokable action Logout untuk membersihkan sesi & token autentikasi
         $logout();
 
+        // Arahkan kembali ke halaman utama menggunakan navigasi SPA Livewire
         $this->redirect('/', navigate: true);
     }
 }; ?>
 
+{{-- Navbar utama dengan state Alpine.js 'open' untuk mengatur menu hamburger di layar kecil --}}
 <nav x-data="{ open: false }" class="bg-white border-b border-brex-mist sticky top-0 z-50">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,6 +42,7 @@ new class extends Component
                 </div>
 
                 <!-- Navigation Links -->
+                {{-- Daftar link menu desktop; kelas aktif ditentukan dari rute yang sedang dibuka --}}
                 <div class="hidden sm:flex sm:items-center sm:gap-2">
                     <a href="{{ route('home') }}" wire:navigate 
                        class="px-3.5 py-2 text-sm font-medium rounded-brex transition duration-150 tracking-brex-24 {{ request()->routeIs('home') ? 'text-brex-ink bg-brex-fog border border-brex-mist font-semibold' : 'text-brex-graphite hover:text-brex-ink hover:bg-brex-fog' }}">
@@ -47,11 +56,13 @@ new class extends Component
             </div>
 
             <!-- Settings Dropdown -->
+            {{-- Dropdown akun pengguna di kanan atas (hanya tampil pada layar sm ke atas) --}}
             <div class="hidden sm:flex sm:items-center sm:gap-3">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="brex-btn-secondary text-sm font-medium">
                             <span class="text-xs text-brex-pewter">Halo,</span>
+                            {{-- Menampilkan nama pengguna secara reaktif; otomatis berubah saat event profile-updated diterima --}}
                             <span class="text-brex-ink font-semibold" x-data="{{ json_encode(['name' => auth()->user()->nama ?? auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.nama"></span>
 
                             <svg class="w-4 h-4 text-brex-graphite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,6 +90,7 @@ new class extends Component
                             <div class="border-t border-brex-mist my-1"></div>
 
                             <!-- Authentication -->
+                            {{-- Tombol keluar yang memanggil method logout() di komponen Volt ini --}}
                             <button wire:click="logout" class="w-full text-start text-red-600 hover:bg-red-50 px-4 py-2.5 text-sm flex items-center gap-2 font-semibold transition duration-150">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -91,6 +103,7 @@ new class extends Component
             </div>
 
             <!-- Hamburger -->
+            {{-- Tombol menu hamburger untuk membuka/menutup navigasi mobile --}}
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-brex text-brex-ink hover:bg-brex-fog focus:outline-none transition duration-150">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -103,6 +116,7 @@ new class extends Component
     </div>
 
     <!-- Responsive Navigation Menu -->
+    {{-- Panel menu navigasi untuk perangkat mobile yang tampil saat variabel Alpine 'open' bernilai true --}}
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-white border-b border-brex-mist px-4 pt-2 pb-6 space-y-3">
         <div class="space-y-1">
             <a href="{{ route('home') }}" wire:navigate class="block px-4 py-2.5 rounded-brex text-base font-medium text-brex-ink hover:bg-brex-fog">

@@ -1,5 +1,7 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman edit jadwal keberangkatan --}}
 @section('title', 'Edit Jadwal Keberangkatan')
 
 @section('content')
@@ -16,6 +18,7 @@
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Mengirim perubahan jadwal menggunakan metode PUT ke route admin.schedules.update --}}
         <form action="{{ route('admin.schedules.update', $schedule) }}" method="POST" class="space-y-5">
             @csrf
             @method('PUT')
@@ -23,6 +26,7 @@
             <!-- Pilih Rute -->
             <div>
                 <label for="route_id" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Rute Perjalanan</label>
+                {{-- Menandai rute yang sesuai dengan $schedule->route_id atau old('route_id') --}}
                 <select name="route_id" id="route_id" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                     @foreach($routes as $r)
                         <option value="{{ $r->id }}" {{ old('route_id', $schedule->route_id) == $r->id ? 'selected' : '' }}>
@@ -54,6 +58,7 @@
                 <!-- Waktu Berangkat -->
                 <div>
                     <label for="waktu_berangkat" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Waktu Keberangkatan</label>
+                    {{-- Format ulang tanggal ke Y-m-d\TH:i agar terbaca dengan benar oleh input datetime-local HTML5 --}}
                     <input type="datetime-local" name="waktu_berangkat" id="waktu_berangkat" value="{{ old('waktu_berangkat', \Carbon\Carbon::parse($schedule->waktu_berangkat)->format('Y-m-d\TH:i')) }}" required
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                     @error('waktu_berangkat')

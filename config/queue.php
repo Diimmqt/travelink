@@ -1,5 +1,6 @@
 <?php
 
+// Mengembalikan konfigurasi antrean tugas latar belakang (queue) untuk memproses pekerjaan berat secara asinkron.
 return [
 
     /*
@@ -13,6 +14,7 @@ return [
     |
     */
 
+    // Koneksi antrean bawaan yang dipakai saat menjalankan job (bawaan: 'database').
     'default' => env('QUEUE_CONNECTION', 'database'),
 
     /*
@@ -28,12 +30,15 @@ return [
     |
     */
 
+    // Daftar koneksi backend antrean yang didukung aplikasi.
     'connections' => [
 
+        // Menjalankan job langsung secara sinkron saat request berlangsung (tanpa antrean latar belakang).
         'sync' => [
             'driver' => 'sync',
         ],
 
+        // Menyimpan daftar job antrean ke tabel database (bawaan tabel 'jobs') dengan batas waktu retry_after 90 detik.
         'database' => [
             'driver' => 'database',
             'connection' => env('DB_QUEUE_CONNECTION', null),
@@ -43,6 +48,7 @@ return [
             'after_commit' => false,
         ],
 
+        // Menggunakan layanan antrean Beanstalkd untuk memproses job secara terpisah.
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),
@@ -52,6 +58,7 @@ return [
             'after_commit' => false,
         ],
 
+        // Menggunakan layanan antrean cloud Amazon SQS.
         'sqs' => [
             'driver' => 'sqs',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -63,6 +70,7 @@ return [
             'after_commit' => false,
         ],
 
+        // Menggunakan Redis sebagai media penyimpanan antrean job berkecepatan tinggi.
         'redis' => [
             'driver' => 'redis',
             'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
@@ -85,6 +93,7 @@ return [
     |
     */
 
+    // Lokasi database dan tabel ('job_batches') untuk mencatat progres sekumpulan job yang dijalankan bersamaan (batch).
     'batching' => [
         'database' => env('DB_CONNECTION', 'sqlite'),
         'table' => 'job_batches',
@@ -103,6 +112,7 @@ return [
     |
     */
 
+    // Pengaturan penyimpanan job yang gagal dijalankan agar bisa diperiksa atau dijalankan ulang ke tabel 'failed_jobs'.
     'failed' => [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
         'database' => env('DB_CONNECTION', 'sqlite'),

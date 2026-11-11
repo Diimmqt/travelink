@@ -1,3 +1,4 @@
+{{-- Komponen modal dialog responsif berbasis Alpine.js dengan dukungan fokus keyboard (Tab / Shift+Tab / Escape) --}}
 @props([
     'name',
     'show' => false,
@@ -5,6 +6,7 @@
 ])
 
 @php
+// Memetakan ukuran maxWidth ke kelas Tailwind yang sesuai
 $maxWidth = [
     'sm' => 'sm:max-w-sm',
     'md' => 'sm:max-w-md',
@@ -14,6 +16,7 @@ $maxWidth = [
 ][$maxWidth];
 @endphp
 
+{{-- State Alpine.js untuk mengatur visibilitas modal (show) serta navigasi fokus elemen di dalam modal --}}
 <div
     x-data="{
         show: @js($show),
@@ -49,6 +52,7 @@ $maxWidth = [
     class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
     style="display: {{ $show ? 'block' : 'none' }};"
 >
+    {{-- Lapisan backdrop gelap di belakang modal; klik area ini akan menutup modal --}}
     <div
         x-show="show"
         class="fixed inset-0 transform transition-all"
@@ -63,6 +67,7 @@ $maxWidth = [
         <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
     </div>
 
+    {{-- Kotak konten utama modal dengan animasi zoom/slide --}}
     <div
         x-show="show"
         class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full {{ $maxWidth }} sm:mx-auto"

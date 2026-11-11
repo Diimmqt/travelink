@@ -1,7 +1,9 @@
 <?php
 
+// Mengimpor helper Str dari Laravel untuk mengubah nama aplikasi menjadi format slug pada prefix cache.
 use Illuminate\Support\Str;
 
+// Mengembalikan konfigurasi penyimpanan cache aplikasi.
 return [
 
     /*
@@ -15,6 +17,7 @@ return [
     |
     */
 
+    // Driver cache bawaan yang digunakan jika tidak disebutkan secara khusus (bawaan: 'database').
     'default' => env('CACHE_STORE', 'database'),
 
     /*
@@ -31,13 +34,16 @@ return [
     |
     */
 
+    // Daftar pilihan media penyimpanan (store) cache yang tersedia di aplikasi.
     'stores' => [
 
+        // Menyimpan cache hanya di memori sementara selama satu request (cocok untuk pengujian/testing).
         'array' => [
             'driver' => 'array',
             'serialize' => false,
         ],
 
+        // Menyimpan data cache di dalam tabel database (bawaan tabel 'cache').
         'database' => [
             'driver' => 'database',
             'table' => env('DB_CACHE_TABLE', 'cache'),
@@ -45,12 +51,14 @@ return [
             'lock_connection' => env('DB_CACHE_LOCK_CONNECTION', null),
         ],
 
+        // Menyimpan cache sebagai file fisik di folder storage/framework/cache/data.
         'file' => [
             'driver' => 'file',
             'path' => storage_path('framework/cache/data'),
             'lock_path' => storage_path('framework/cache/data'),
         ],
 
+        // Menyimpan cache di server Memcached untuk performa cepat berbasis memori.
         'memcached' => [
             'driver' => 'memcached',
             'persistent_id' => env('MEMCACHED_PERSISTENT_ID'),
@@ -70,12 +78,14 @@ return [
             ],
         ],
 
+        // Menyimpan cache di server Redis (cepat dan mendukung locking terdistribusi).
         'redis' => [
             'driver' => 'redis',
             'connection' => env('REDIS_CACHE_CONNECTION', 'cache'),
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
         ],
 
+        // Menyimpan cache menggunakan layanan cloud AWS DynamoDB.
         'dynamodb' => [
             'driver' => 'dynamodb',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -85,6 +95,7 @@ return [
             'endpoint' => env('DYNAMODB_ENDPOINT'),
         ],
 
+        // Store cache khusus saat aplikasi dijalankan menggunakan Laravel Octane.
         'octane' => [
             'driver' => 'octane',
         ],
@@ -102,6 +113,7 @@ return [
     |
     */
 
+    // Awalan (prefix) untuk setiap kunci cache agar tidak bentrok jika server cache dipakai oleh beberapa aplikasi sekaligus.
     'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache_'),
 
 ];

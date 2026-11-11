@@ -1,5 +1,7 @@
+{{-- Menggunakan layout admin utama --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman persetujuan refund --}}
 @section('title', 'Persetujuan Refund & Reschedule')
 
 @section('content')
@@ -10,6 +12,7 @@
     </div>
 
     <!-- Status Tabs / Filter -->
+    {{-- Tab navigasi untuk menyaring daftar tiket berdasarkan status pengajuan refund --}}
     <div class="flex items-center gap-2 border-b border-brex-mist pb-4">
         <a href="{{ route('admin.refunds.index', ['status' => 'refund_requested']) }}"
            class="px-4 py-2 rounded-brex text-xs font-semibold transition-colors {{ $status === 'refund_requested' ? 'bg-brex-ember text-white' : 'bg-brex-paper text-brex-graphite border border-brex-mist hover:bg-brex-fog' }}">
@@ -40,11 +43,13 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-brex-mist text-sm text-brex-graphite">
+                    {{-- Perulangan daftar tiket yang mengajukan/memiliki riwayat refund --}}
                     @forelse ($tickets as $ticket)
                         <tr class="hover:bg-brex-fog/50 transition-colors">
                             <!-- Tiket & Penumpang -->
                             <td class="py-4 px-6 font-medium text-brex-ink">
                                 <div class="font-semibold">{{ $ticket->nama_penumpang }}</div>
+                                {{-- Menampilkan 8 karakter awal QR token dalam huruf besar sebagai kode tiket --}}
                                 <div class="text-xs text-brex-pewter font-mono mt-0.5">Token: {{ strtoupper(substr($ticket->qr_token, 0, 8)) }}</div>
                                 <div class="text-[11px] text-brex-steel mt-0.5">{{ $ticket->user->email ?? '-' }}</div>
                             </td>
@@ -65,12 +70,14 @@
                             </td>
 
                             <!-- Nominal -->
+                            {{-- Mengambil nominal pembayaran dari transaksi terkait, atau harga dasar rute jika kosong --}}
                             <td class="py-4 px-6 font-semibold text-brex-ink">
                                 Rp {{ number_format($ticket->transaction->amount ?? $ticket->schedule->route->harga ?? 0, 0, ',', '.') }}
                             </td>
 
                             <!-- Status -->
                             <td class="py-4 px-6">
+                                {{-- Tampilkan label status tiket sesuai kondisinya --}}
                                 @if($ticket->status === 'refund_requested')
                                     <span class="px-2.5 py-1 text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 rounded-brex-chip">
                                         Refund Requested
@@ -88,7 +95,9 @@
 
                             <!-- Tindakan Persetujuan -->
                             <td class="py-4 px-6 text-right space-x-2">
+                                {{-- Tombol Approve dan Reject hanya muncul jika status tiket masih 'refund_requested' --}}
                                 @if($ticket->status === 'refund_requested')
+                                    {{-- Form persetujuan refund yang akan membebaskan kembali kursi --}}
                                     <form action="{{ route('admin.refunds.approve', $ticket) }}" method="POST" class="inline-block" onsubmit="return confirm('Setujui refund untuk tiket ini? Kursi akan kembali dibebaskan.')">
                                         @csrf
                                         <button type="submit" class="px-4 py-2 bg-brex-ember text-white text-xs font-medium rounded-brex hover:bg-[#e04f00] transition-colors shadow-none">
@@ -96,6 +105,7 @@
                                         </button>
                                     </form>
 
+                                    {{-- Form penolakan refund yang mengembalikan status tiket menjadi lunas/aktif --}}
                                     <form action="{{ route('admin.refunds.reject', $ticket) }}" method="POST" class="inline-block" onsubmit="return confirm('Tolak permohonan refund? Status tiket akan dikembalikan ke LUNAS.')">
                                         @csrf
                                         <button type="submit" class="px-4 py-2 border border-brex-mist text-brex-ink text-xs font-medium rounded-brex hover:bg-brex-fog transition-colors">
@@ -117,6 +127,7 @@
                 </tbody>
             </table>
         </div>
+        {{-- Menampilkan paginasi jika jumlah pengajuan refund lebih dari satu halaman --}}
         @if ($tickets->hasPages())
             <div class="p-4 border-t border-brex-mist bg-brex-fog/30">
                 {{ $tickets->links() }}

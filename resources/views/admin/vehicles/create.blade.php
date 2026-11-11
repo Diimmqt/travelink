@@ -1,10 +1,13 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman tambah armada kendaraan --}}
 @section('title', 'Tambah Armada Kendaraan')
 
 @section('content')
 <div class="max-w-2xl space-y-6">
     <div>
+        {{-- Tautan kembali ke halaman daftar armada --}}
         <a href="{{ route('admin.vehicles.index') }}" class="inline-flex items-center gap-1.5 text-xs text-brex-pewter hover:text-brex-ink transition-colors mb-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -16,6 +19,7 @@
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Mengirim data armada baru dengan metode POST ke route admin.vehicles.store --}}
         <form action="{{ route('admin.vehicles.store') }}" method="POST" class="space-y-5">
             @csrf
 
@@ -33,6 +37,7 @@
                 <!-- Plat Nomor -->
                 <div>
                     <label for="plat_nomor" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Plat Nomor</label>
+                    {{-- Tampilan input plat nomor diformat huruf besar (uppercase) --}}
                     <input type="text" name="plat_nomor" id="plat_nomor" value="{{ old('plat_nomor') }}" required placeholder="Contoh: D 7701 AB"
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember uppercase placeholder-brex-steel">
                     @error('plat_nomor')
@@ -44,6 +49,7 @@
             <!-- Kapasitas Kursi -->
             <div>
                 <label for="kapasitas_kursi" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Kapasitas Total Kursi</label>
+                {{-- Kapasitas kursi dibatasi antara 1 sampai 50 dengan nilai default 10 --}}
                 <input type="number" name="kapasitas_kursi" id="kapasitas_kursi" value="{{ old('kapasitas_kursi', 10) }}" min="1" max="50" required placeholder="10"
                     class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                 <p class="text-xs text-brex-pewter mt-1">Saat jadwal baru dibuat menggunakan armada ini, sistem akan otomatis generate nomor kursi sesuai jumlah ini.</p>

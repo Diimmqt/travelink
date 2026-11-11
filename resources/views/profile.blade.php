@@ -1,22 +1,27 @@
+{{-- Halaman pengaturan profil pengguna, dibungkus dalam layout utama aplikasi --}}
 <x-app-layout>
+    {{-- Slot header untuk menampilkan judul halaman pada bilah atas layout --}}
     <x-slot name="header">
         {{ __('Pengaturan Profil') }}
     </x-slot>
 
     <div class="py-10 px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto space-y-6">
+            {{-- Kartu 1: Form Livewire untuk memperbarui nama dan alamat email pengguna --}}
             <div class="brex-card p-6 sm:p-8">
                 <div class="max-w-xl">
                     <livewire:profile.update-profile-information-form />
                 </div>
             </div>
 
+            {{-- Kartu 2: Form Livewire untuk mengubah kata sandi (password) akun --}}
             <div class="brex-card p-6 sm:p-8">
                 <div class="max-w-xl">
                     <livewire:profile.update-password-form />
                 </div>
             </div>
 
+            {{-- Kartu 3: Form Livewire untuk menghapus akun pengguna secara permanen --}}
             <div class="brex-card p-6 sm:p-8">
                 <div class="max-w-xl">
                     <livewire:profile.delete-user-form />

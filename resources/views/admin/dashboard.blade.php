@@ -1,7 +1,10 @@
+{{-- Menggunakan layout utama halaman admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman di tag <title> --}}
 @section('title', 'Dashboard Laporan Penjualan')
 
+{{-- Memulai bagian konten utama halaman --}}
 @section('content')
 <div class="space-y-8">
     <!-- Header & Date Filter Form -->
@@ -12,21 +15,25 @@
         </div>
 
         <!-- Filter Tanggal -->
+        {{-- Form metode GET untuk menyaring data laporan berdasarkan rentang tanggal --}}
         <form method="GET" action="{{ route('admin.dashboard') }}" class="bg-brex-paper border border-brex-mist rounded-brex p-3 flex items-center gap-3 shadow-none">
             <div>
                 <label class="block text-[10px] font-semibold text-brex-pewter uppercase tracking-wider">Dari Tanggal</label>
+                {{-- Input tanggal awal dengan nilai default dari query string atau variabel $startDate --}}
                 <input type="date" name="start_date" value="{{ request('start_date', optional($startDate)->format('Y-m-d')) }}"
                     class="bg-transparent border-0 p-0 text-xs font-semibold text-brex-ink focus:ring-0">
             </div>
             <span class="text-brex-mist">-</span>
             <div>
                 <label class="block text-[10px] font-semibold text-brex-pewter uppercase tracking-wider">Sampai Tanggal</label>
+                {{-- Input tanggal akhir dengan nilai default dari query string atau variabel $endDate --}}
                 <input type="date" name="end_date" value="{{ request('end_date', optional($endDate)->format('Y-m-d')) }}"
                     class="bg-transparent border-0 p-0 text-xs font-semibold text-brex-ink focus:ring-0">
             </div>
             <button type="submit" class="px-3 py-2 bg-brex-ember text-white text-xs font-medium rounded-brex hover:bg-[#e04f00] transition-colors shadow-none">
                 Filter
             </button>
+            {{-- Tampilkan tombol Reset hanya jika pengguna sedang memakai filter tanggal --}}
             @if(request('start_date') || request('end_date'))
                 <a href="{{ route('admin.dashboard') }}" class="text-xs text-brex-pewter hover:text-brex-ink px-2">Reset</a>
             @endif
@@ -34,11 +41,13 @@
     </div>
 
     <!-- Summary Cards Grid -->
+    {{-- Grid 2 kolom untuk menampilkan ringkasan total transaksi dan total pendapatan --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Total Transaksi -->
         <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none flex items-start justify-between">
             <div>
                 <p class="text-xs font-semibold text-brex-pewter uppercase tracking-wider">Total Transaksi Berhasil</p>
+                {{-- Format angka ribuan menggunakan titik sebagai pemisah --}}
                 <h2 class="text-3xl md:text-4xl font-semibold text-brex-ink tracking-brex-36 mt-2">
                     {{ number_format($totalTransactions, 0, ',', '.') }}
                 </h2>
@@ -55,6 +64,7 @@
         <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none flex items-start justify-between">
             <div>
                 <p class="text-xs font-semibold text-brex-pewter uppercase tracking-wider">Total Pendapatan</p>
+                {{-- Menampilkan total omset dalam format mata uang Rupiah --}}
                 <h2 class="text-3xl md:text-4xl font-semibold text-brex-ink tracking-brex-36 mt-2">
                     Rp {{ number_format($totalRevenue, 0, ',', '.') }}
                 </h2>
@@ -69,6 +79,7 @@
     </div>
 
     <!-- Chart Penjualan -->
+    {{-- Area elemen canvas tempat grafik Chart.js akan digambar --}}
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none space-y-4">
         <div class="flex items-center justify-between">
             <h3 class="text-base font-semibold text-brex-ink tracking-brex-24">Grafik Pendapatan Harian</h3>
@@ -80,6 +91,7 @@
     </div>
 
     <!-- Breakdown Pendapatan Per Rute -->
+    {{-- Tabel rincian jumlah tiket terjual dan pendapatan untuk masing-masing rute --}}
     <div class="bg-brex-paper border border-brex-mist rounded-brex shadow-none overflow-hidden space-y-4">
         <div class="p-6 border-b border-brex-mist pb-4">
             <h3 class="text-base font-semibold text-brex-ink tracking-brex-24">Breakdown Pendapatan Per Rute</h3>
@@ -97,6 +109,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-brex-mist text-sm text-brex-graphite">
+                    {{-- Perulangan untuk setiap data rute pada $routeBreakdown; tampilkan @empty jika kosong --}}
                     @forelse ($routeBreakdown as $rb)
                         <tr class="hover:bg-brex-fog/50 transition-colors">
                             <td class="py-4 px-6 font-semibold text-brex-ink">
@@ -128,14 +141,20 @@
 </div>
 @endsection
 
+{{-- Menyisipkan script JavaScript ke stack 'scripts' pada layout admin --}}
 @push('scripts')
+{{-- Memuat library Chart.js dari CDN untuk membuat grafik garis --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Jalankan inisialisasi grafik setelah seluruh struktur HTML selesai dimuat
     document.addEventListener('DOMContentLoaded', function () {
+        // Ambil konteks 2D dari elemen canvas grafik penjualan
         const ctx = document.getElementById('salesChart').getContext('2d');
+        // Ubah data label tanggal dan nilai pendapatan dari PHP menjadi array JavaScript
         const labels = {!! json_encode($chartLabels) !!};
         const values = {!! json_encode($chartValues) !!};
 
+        // Buat instance grafik garis (line chart) baru menggunakan Chart.js
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -159,6 +178,7 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
+                    // Format teks tooltip saat kursor diarahkan ke titik grafik
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -177,6 +197,7 @@
                         ticks: {
                             color: '#6f737b',
                             font: { family: 'Inter', size: 11 },
+                            // Ringkas angka nominal pada sumbu Y menjadi satuan Juta (Jt) atau Ribu (Rb)
                             callback: function(value) {
                                 if (value >= 1000000) return 'Rp ' + (value/1000000) + ' Jt';
                                 if (value >= 1000) return 'Rp ' + (value/1000) + ' Rb';

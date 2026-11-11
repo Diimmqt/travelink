@@ -7,14 +7,40 @@ use App\Models\Ticket;
 use App\Models\BoardingLog;
 use Illuminate\Http\Request;
 
+/**
+ * Controller untuk memvalidasi QR Code / kode unik tiket saat penumpang akan naik armada (boarding).
+ * Digunakan baik oleh Admin maupun Kasir loket.
+ */
 class BoardingController extends Controller
 {
+    /**
+     * Menentukan nama route tujuan redirect sesuai peran/prefix route pengguna (kasir atau admin).
+     *
+     * @param  \Illuminate\Http\Request  $request  Objek permintaan HTTP
+     * @return string  Nama route tujuan redirect
+     */
+    protected function getRedirectRoute(Request $request): string
+    {
+        return ($request->routeIs('kasir.*') || (auth()->check() && auth()->user()->isKasir()))
+            ? 'kasir.boarding.index'
+            : 'admin.boarding.index';
+    }
+
+    /**
+     * Menampilkan halaman pemindaian boarding beserta 15 riwayat scan terakhir.
+     * Jika terdapat parameter qr_token/token di URL, langsung jalankan proses validasi.
+     *
+     * @param  \Illuminate\Http\Request  $request  Objek permintaan HTTP
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
     public function index(Request $request)
     {
+        // Jika scanner kamera membuka URL yang langsung membawa parameter token, segera validasi
         if ($request->filled('qr_token') || $request->filled('token')) {
             return $this->validateToken($request);
         }
 
+        // Ambil 15 log pemindaian boarding terbaru beserta relasi tiket dan petugas yang memindai
         $recentLogs = BoardingLog::with(['ticket.schedule.route', 'ticket.seat', 'ticket.user', 'admin'])
             ->orderBy('created_at', 'desc')
             ->take(15)
@@ -23,12 +49,22 @@ class BoardingController extends Controller
         return view('admin.boarding.index', compact('recentLogs'));
     }
 
+    /**
+     * Memvalidasi kode tiket atau QR Token yang diinput/dipindai, mencatat log boarding,
+     * dan mengubah status tiket menjadi 'boarded' jika sah.
+     *
+     * @param  \Illuminate\Http\Request  $request  Permintaan HTTP berisi qr_token atau token
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function validateToken(Request $request)
     {
+        // Tentukan route redirect sesuai role petugas (admin/kasir) dan ambil input kode
+        $redirectRoute = $this->getRedirectRoute($request);
         $input = trim($request->input('qr_token', $request->query('qr_token', $request->query('token', ''))));
 
+        // Tolak jika input kosong
         if (empty($input)) {
-            return redirect()->route('admin.boarding.index')->with('validation_result', [
+            return redirect()->route($redirectRoute)->with('validation_result', [
                 'success' => false,
                 'title' => 'Ditolak',
                 'message' => 'Silakan masukkan kode tiket atau scan QR Code.',
@@ -51,12 +87,13 @@ class BoardingController extends Controller
             }
         }
 
+        // Bersihkan spasi dan ambil hanya karakter alfanumerik huruf kecil untuk pengecekan format
         $token = trim($token);
         $cleanAlphanumeric = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $token));
 
         // Validasi panjang minimum kode (minimal 8 karakter heksadesimal atau UUID) untuk mencegah blind guessing / brute force
         if (strlen($cleanAlphanumeric) < 8) {
-            return redirect()->route('admin.boarding.index')->with('validation_result', [
+            return redirect()->route($redirectRoute)->with('validation_result', [
                 'success' => false,
                 'title' => 'Ditolak',
                 'message' => 'Kode tiket harus terdiri dari minimal 8 karakter kode unik atau kode QR lengkap.',
@@ -64,8 +101,10 @@ class BoardingController extends Controller
             ]);
         }
 
+        // Siapkan query pencarian tiket beserta seluruh relasi yang dibutuhkan untuk tampilan hasil scan
         $query = Ticket::with(['schedule.route', 'schedule.vehicle', 'seat', 'user', 'pickupPoint', 'dropoffPoint']);
 
+        // Cari tiket berdasarkan format token: UUID penuh, 32 karakter tanpa strip, atau 8 karakter awalan
         if (\Illuminate\Support\Str::isUuid($token)) {
             // Pencocokan eksak UUID jika formatnya adalah full UUID
             $ticket = $query->where('qr_token', $token)->first();
@@ -78,8 +117,9 @@ class BoardingController extends Controller
             $ticket = $query->where('qr_token', 'LIKE', $hexPrefix . '%')->first();
         }
 
+        // Jika tiket tidak ditemukan di database, kembalikan pesan penolakan
         if (!$ticket) {
-            return redirect()->route('admin.boarding.index')->with('validation_result', [
+            return redirect()->route($redirectRoute)->with('validation_result', [
                 'success' => false,
                 'title' => 'Ditolak',
                 'message' => "Kode unik atau QR Token '{$input}' tidak ditemukan dalam database.",
@@ -87,6 +127,7 @@ class BoardingController extends Controller
             ]);
         }
 
+        // Tolak dan catat log jika tiket sudah pernah dipakai untuk boarding sebelumnya
         if ($ticket->status === 'boarded') {
             BoardingLog::create([
                 'ticket_id' => $ticket->id,
@@ -95,7 +136,7 @@ class BoardingController extends Controller
                 'result' => 'rejected',
             ]);
 
-            return redirect()->route('admin.boarding.index')->with('validation_result', [
+            return redirect()->route($redirectRoute)->with('validation_result', [
                 'success' => false,
                 'title' => 'Ditolak',
                 'message' => 'Tiket ini SUDAH DIGUNAKAN (Boarded) sebelumnya.',
@@ -103,6 +144,7 @@ class BoardingController extends Controller
             ]);
         }
 
+        // Tolak dan catat log jika status tiket bukan 'paid' (misalnya masih pending, expired, atau refunded)
         if ($ticket->status !== 'paid') {
             BoardingLog::create([
                 'ticket_id' => $ticket->id,
@@ -111,7 +153,7 @@ class BoardingController extends Controller
                 'result' => 'rejected',
             ]);
 
-            return redirect()->route('admin.boarding.index')->with('validation_result', [
+            return redirect()->route($redirectRoute)->with('validation_result', [
                 'success' => false,
                 'title' => 'Ditolak',
                 'message' => 'Tiket belum sah/lunas (Status saat ini: ' . strtoupper($ticket->status) . ').',
@@ -120,6 +162,7 @@ class BoardingController extends Controller
         }
 
         // TIKET VALID & DITERIMA!
+        // Ubah status tiket menjadi 'boarded' dan catat log keberhasilan pemindaian
         $ticket->update(['status' => 'boarded']);
 
         BoardingLog::create([
@@ -129,7 +172,7 @@ class BoardingController extends Controller
             'result' => 'accepted',
         ]);
 
-        return redirect()->route('admin.boarding.index')->with('validation_result', [
+        return redirect()->route($redirectRoute)->with('validation_result', [
             'success' => true,
             'title' => 'Diterima',
             'message' => 'Validasi Berhasil! Penumpang dipersilakan masuk armada.',

@@ -1,10 +1,13 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman tambah rute perjalanan --}}
 @section('title', 'Tambah Rute Perjalanan')
 
 @section('content')
 <div class="max-w-2xl space-y-6">
     <div>
+        {{-- Tautan kembali ke daftar rute --}}
         <a href="{{ route('admin.routes.index') }}" class="inline-flex items-center gap-1.5 text-xs text-brex-pewter hover:text-brex-ink transition-colors mb-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -16,6 +19,7 @@
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Form penyimpanan rute baru yang dikirim ke route admin.routes.store --}}
         <form action="{{ route('admin.routes.store') }}" method="POST" class="space-y-5">
             @csrf
 
@@ -25,6 +29,7 @@
                     <label for="kota_asal" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Kota Asal</label>
                     <input type="text" name="kota_asal" id="kota_asal" value="{{ old('kota_asal') }}" required placeholder="Contoh: Bandung"
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
+                    {{-- Menampilkan pesan error validasi jika input kota_asal tidak valid --}}
                     @error('kota_asal')
                         <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>
                     @enderror
@@ -45,6 +50,7 @@
                 <!-- Harga Tiket -->
                 <div>
                     <label for="harga" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Harga Tiket (Rp)</label>
+                    {{-- Input angka harga tiket dengan kelipatan step 1000 --}}
                     <input type="number" name="harga" id="harga" value="{{ old('harga') }}" required placeholder="125000" step="1000"
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
                     @error('harga')
@@ -55,6 +61,7 @@
                 <!-- Estimasi Durasi (Menit) -->
                 <div>
                     <label for="estimasi_durasi_menit" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Estimasi Durasi (Menit)</label>
+                    {{-- Default nilai estimasi durasi diset 180 menit (3 jam) bila belum ada input --}}
                     <input type="number" name="estimasi_durasi_menit" id="estimasi_durasi_menit" value="{{ old('estimasi_durasi_menit', 180) }}" required placeholder="180"
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
                     @error('estimasi_durasi_menit')

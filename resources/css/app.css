@@ -1,8 +1,11 @@
+/* Mengimpor lapisan gaya bawaan Tailwind CSS: base (reset), components (kelas komponen), dan utilities (kelas utilitas) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Lapisan base: mengatur tipografi, warna latar, dan gaya dasar elemen HTML/body serta utilitas teks */
 @layer base {
+    /* Pengaturan font Inter, perataan rendering huruf, serta warna dasar putih-hitam untuk elemen root html */
     html {
         font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         font-feature-settings: "calt" 0, "liga" 0;
@@ -20,6 +23,7 @@
     }
 
     /* Brex Typography Negative Tracking Utilities */
+    /* Kelas utilitas jarak antar huruf (letter-spacing) rapat sesuai skala ukuran judul */
     .tracking-brex-72 {
         letter-spacing: -0.03em;
     }
@@ -34,6 +38,7 @@
     }
 
     /* Hero headline - weight 600, up to 72px, line-height 1.0 */
+    /* Gaya standar untuk judul utama (hero) agar tampak tegas dan rapat */
     .brex-hero-headline {
         font-weight: 600;
         letter-spacing: -0.03em;
@@ -42,6 +47,7 @@
     }
 
     /* Section heading - weight 600, line-height 1.1 */
+    /* Gaya standar untuk judul tiap bagian halaman */
     .brex-section-heading {
         font-weight: 600;
         letter-spacing: -0.025em;
@@ -50,6 +56,7 @@
     }
 
     /* Body paragraph - weight 400, 16px, line-height 1.5, left-aligned, max-w ~640px */
+    /* Gaya paragraf isi agar nyaman dibaca dengan batas lebar maksimal 640px */
     .brex-body {
         font-weight: 400;
         font-size: 1rem;
@@ -61,8 +68,10 @@
     }
 }
 
+/* Lapisan components: mendefinisikan kelas komponen UI yang dipakai ulang di seluruh aplikasi Travelink */
 @layer components {
     /* Brex Card — white bg, 1px Mist border, 12px radius, NO shadow */
+    /* Komponen kartu standar dengan latar putih, garis tepi tipis, dan sudut membulat tanpa bayangan */
     .brex-card {
         background-color: #ffffff;
         border: 1px solid #b9bbc6;
@@ -71,11 +80,13 @@
     }
 
     /* Brex Alternate Section — Fog background */
+    /* Latar belakang abu-abu muda (#f3f3f7) untuk membedakan antar bagian halaman */
     .brex-section-fog {
         background-color: #f3f3f7;
     }
 
     /* Brex Primary CTA Button — Ember orange fill, white text weight 600, 12px radius */
+    /* Tombol aksi utama (CTA) berwarna oranye menyala dengan efek hover lebih gelap */
     .brex-btn-ember {
         display: inline-flex;
         align-items: center;
@@ -100,6 +111,7 @@
     }
 
     /* Brex Secondary Button — White / light fog bg, 1px Mist border, Ink text, 12px radius */
+    /* Tombol aksi sekunder berwarna putih dengan garis tepi abu-abu */
     .brex-btn-secondary {
         display: inline-flex;
         align-items: center;
@@ -122,6 +134,7 @@
     }
 
     /* Brex Input — White bg, 1px Mist border, 12px radius */
+    /* Gaya standar kolom input form beserta efek fokus oranye */
     .brex-input {
         background-color: #ffffff;
         border: 1px solid #b9bbc6;
@@ -143,6 +156,7 @@
     }
 
     /* Standalone Ember Link (not inline inside body paragraph) */
+    /* Gaya tautan berdiri sendiri berwarna oranye dengan garis bawah saat diarahkan kursor */
     .brex-link-ember {
         color: #ff5900;
         font-weight: 500;

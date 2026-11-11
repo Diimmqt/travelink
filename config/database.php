@@ -16,6 +16,7 @@ return [
     |
     */
 
+    // Menentukan koneksi database default yang diambil dari variabel lingkungan DB_CONNECTION (bawaan: sqlite)
     'default' => env('DB_CONNECTION', 'sqlite'),
 
     /*
@@ -29,8 +30,10 @@ return [
     |
     */
 
+    // Daftar konfigurasi koneksi untuk berbagai jenis sistem database yang didukung aplikasi
     'connections' => [
 
+        // Pengaturan koneksi untuk database SQLite (berbasis file lokal)
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
@@ -39,6 +42,7 @@ return [
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
 
+        // Pengaturan koneksi untuk database MySQL (host, port, nama database, kredensial, dan opsi SSL)
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
@@ -54,11 +58,13 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Mengaktifkan opsi sertifikat SSL CA hanya jika ekstensi pdo_mysql aktif dan nilai MYSQL_ATTR_SSL_CA diisi
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                (defined('Pdo\Mysql::ATTR_SSL_CA') ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
+        // Pengaturan koneksi untuk database MariaDB (turunan MySQL dengan collation khusus MariaDB)
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
@@ -75,10 +81,11 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                (defined('Pdo\Mysql::ATTR_SSL_CA') ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
+        // Pengaturan koneksi untuk database PostgreSQL
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
@@ -94,6 +101,7 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        // Pengaturan koneksi untuk database Microsoft SQL Server
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),
@@ -122,6 +130,7 @@ return [
     |
     */
 
+    // Nama tabel pencatat riwayat migrasi database yang sudah dijalankan
     'migrations' => [
         'table' => 'migrations',
         'update_date_on_publish' => true,
@@ -138,6 +147,7 @@ return [
     |
     */
 
+    // Konfigurasi koneksi Redis untuk penyimpanan key-value cepat dan cache
     'redis' => [
 
         'client' => env('REDIS_CLIENT', 'phpredis'),
@@ -147,6 +157,7 @@ return [
             'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
         ],
 
+        // Koneksi Redis utama (database indeks 0)
         'default' => [
             'url' => env('REDIS_URL'),
             'host' => env('REDIS_HOST', '127.0.0.1'),
@@ -156,6 +167,7 @@ return [
             'database' => env('REDIS_DB', '0'),
         ],
 
+        // Koneksi Redis khusus untuk penyimpanan cache (database indeks 1)
         'cache' => [
             'url' => env('REDIS_URL'),
             'host' => env('REDIS_HOST', '127.0.0.1'),

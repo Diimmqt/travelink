@@ -8,8 +8,10 @@ use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
+// Komponen Volt untuk halaman pendaftaran akun baru menggunakan layout tamu (layouts.guest)
 new #[Layout('layouts.guest')] class extends Component
 {
+    // Properti input formulir registrasi
     public string $nama = '';
     public string $email = '';
     public string $password = '';
@@ -17,25 +19,34 @@ new #[Layout('layouts.guest')] class extends Component
 
     /**
      * Handle an incoming registration request.
+     *
+     * Memvalidasi data pendaftaran, mengenkripsi password, membuat akun user baru,
+     * memicu event Registered, langsung login, lalu mengarahkan ke pencarian jadwal.
      */
     public function register(): void
     {
+        // Validasi nama, email unik (huruf kecil), dan password beserta konfirmasinya
         $validated = $this->validate([
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Enkripsi (hash) password sebelum disimpan ke database
         $validated['password'] = Hash::make($validated['password']);
 
+        // Simpan user baru ke database dan picu event Registered (untuk verifikasi email jika aktif)
         event(new Registered($user = User::create($validated)));
 
+        // Login otomatis pengguna yang baru mendaftar
         Auth::login($user);
 
+        // Arahkan pengguna ke halaman pencarian jadwal
         $this->redirect(route('schedules.search', absolute: false), navigate: true);
     }
 }; ?>
 
+{{-- Kontainer halaman registrasi di tengah layar --}}
 <div class="min-h-screen bg-brex-fog flex items-center justify-center px-4 py-12 font-sans">
     <div class="w-full max-w-md">
 
@@ -48,10 +59,12 @@ new #[Layout('layouts.guest')] class extends Component
         </div>
 
         <!-- Card -->
+        {{-- Kartu formulir pendaftaran akun baru --}}
         <div class="bg-brex-paper border border-brex-mist rounded-brex p-8 shadow-none">
             <h1 class="text-2xl font-semibold text-brex-ink tracking-brex-24 mb-1">Buat Akun Baru</h1>
             <p class="text-sm text-brex-pewter mb-7">Daftar sekarang untuk mulai memesan tiket travel shuttle.</p>
 
+            {{-- Form memanggil method register() saat disubmit --}}
             <form wire:submit="register" class="space-y-5">
                 <!-- Nama -->
                 <div>

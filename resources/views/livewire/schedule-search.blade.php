@@ -1,9 +1,12 @@
+{{-- Komponen Livewire untuk pencarian jadwal keberangkatan travel --}}
 <div class="space-y-6">
     <!-- Search Form Panel -->
+    {{-- Formulir pencarian jadwal: mencegah submit browser biasa dan memanggil method search() --}}
     <form wire:submit.prevent="search">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
 
             <!-- Kota Asal -->
+            {{-- Dropdown pilihan kota asal yang terhubung ke properti $kota_asal --}}
             <div>
                 <label class="block text-xs font-semibold uppercase tracking-widest text-brex-pewter mb-1.5">
                     Kota Asal
@@ -29,6 +32,7 @@
             </div>
 
             <!-- Kota Tujuan -->
+            {{-- Dropdown pilihan kota tujuan yang terhubung ke properti $kota_tujuan --}}
             <div>
                 <label class="block text-xs font-semibold uppercase tracking-widest text-brex-pewter mb-1.5">
                     Kota Tujuan
@@ -54,6 +58,7 @@
             </div>
 
             <!-- Tanggal -->
+            {{-- Input tanggal keberangkatan yang terhubung ke properti $tanggal --}}
             <div class="sm:col-span-2">
                 <label class="block text-xs font-semibold uppercase tracking-widest text-brex-pewter mb-1.5">
                     Tanggal Keberangkatan
@@ -74,6 +79,7 @@
         </div>
 
         <!-- Submit button — Ember filled button -->
+        {{-- Tombol cari jadwal dengan state loading otomatis agar tombol tidak bisa diklik berulang saat proses berjalan --}}
         <button type="submit"
                 wire:loading.attr="disabled"
                 class="brex-btn-ember w-full h-11 text-base font-semibold"
@@ -94,6 +100,7 @@
         </button>
 
         <!-- Button Tiket Saya -->
+        {{-- Tautan cepat menuju halaman riwayat tiket pengguna menggunakan navigasi SPA Livewire --}}
         <a href="{{ route('tickets.history') }}" wire:navigate
            class="brex-btn-secondary w-full h-11 mt-3 text-sm flex items-center justify-center gap-2 font-medium">
             <svg class="w-4 h-4 text-brex-graphite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +111,9 @@
     </form>
 
     <!-- Results / States -->
+    {{-- Area tampilan hasil pencarian yang berubah sesuai state: belum mencari, kosong, atau ada jadwal --}}
     <div>
+        {{-- Kondisi 1: Pengguna belum menekan tombol Cari Jadwal --}}
         @if(!$hasSearched)
             <!-- Initial state -->
             <div class="text-center py-8 px-4 border-t border-brex-mist">
@@ -119,6 +128,7 @@
                 </p>
             </div>
 
+        {{-- Kondisi 2: Sudah mencari tetapi tidak ada jadwal yang tersedia --}}
         @elseif($schedules->isEmpty())
             <!-- Empty state -->
             <div class="text-center py-8 px-4 border-t border-brex-mist">
@@ -133,6 +143,7 @@
                 </p>
             </div>
 
+        {{-- Kondisi 3: Jadwal ditemukan, tampilkan daftar kartu jadwal --}}
         @else
             <!-- Results -->
             <div class="border-t border-brex-mist pt-5 space-y-4">
@@ -143,6 +154,7 @@
                     </span>
                 </div>
 
+                {{-- Perulangan untuk menampilkan setiap jadwal yang cocok --}}
                 @foreach($schedules as $schedule)
                 <div class="brex-card p-4 hover:border-brex-ink transition-colors duration-150">
                     <div class="flex items-start justify-between gap-4">
@@ -169,6 +181,7 @@
                                 <span>·</span>
                                 <span>{{ $schedule->vehicle->jenis ?? 'Shuttle' }}</span>
                                 <span>·</span>
+                                {{-- Warna teks sisa kursi menjadi merah jika tersisa <= 3 kursi, atau hijau jika masih banyak --}}
                                 <span class="{{ ($schedule->sisa_kursi ?? 0) <= 3 ? 'text-red-600 font-semibold' : 'text-emerald-600 font-semibold' }}">
                                     Sisa {{ $schedule->sisa_kursi ?? 0 }} kursi
                                 </span>
@@ -184,6 +197,7 @@
                                 </span>
                             </div>
 
+                            {{-- Tombol Pesan Tiket hanya aktif jika masih ada sisa kursi; jika habis tampilkan badge Penuh --}}
                             @if($schedule->sisa_kursi > 0)
                                 <a href="{{ route('booking.passenger', ['schedule_id' => $schedule->id]) }}" wire:navigate
                                    class="brex-btn-ember text-xs px-3.5 py-1.5 font-semibold">

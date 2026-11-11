@@ -1,4 +1,6 @@
+{{-- Halaman dashboard pelanggan setelah login, menggunakan komponen layout utama app-layout --}}
 <x-app-layout>
+    {{-- Bagian header/sambutan halaman dashboard --}}
     <div class="bg-white border-b border-brex-mist py-16 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div class="max-w-2xl space-y-4">
@@ -10,12 +12,14 @@
                     Shuttle Travel Antar Kota<br>
                     <span class="text-brex-graphite">Lebih Praktis &amp; Nyaman</span>
                 </h1>
+                {{-- Menampilkan nama pengguna yang sedang login melalui helper auth()->user() --}}
                 <p class="brex-body text-brex-graphite">
                     Halo, <strong class="text-brex-ink font-semibold">{{ auth()->user()->nama }}</strong>! Mau bepergian hari ini? Temukan rute shuttle terbaik dengan titik jemput fleksibel pilihan Anda.
                 </p>
             </div>
 
             <!-- Quick Action Button -->
+            {{-- Tombol pintasan menuju halaman riwayat pemesanan tiket pengguna --}}
             <div class="shrink-0 w-full md:w-auto">
                 <a href="{{ route('tickets.history') }}" 
                     class="brex-card p-4 flex items-center gap-4 hover:border-brex-ink transition-colors duration-150">
@@ -32,9 +36,11 @@
     </div>
 
     <!-- Main Content Area -->
+    {{-- Area konten utama berisi kartu form pencarian jadwal shuttle --}}
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="brex-card p-6 sm:p-8">
             <h2 class="text-xl font-semibold text-brex-ink tracking-brex-24 mb-4">Pencarian Jadwal</h2>
+            {{-- Memanggil komponen Livewire 'schedule-search' untuk pencarian jadwal secara dinamis --}}
             <livewire:schedule-search />
         </div>
     </div>

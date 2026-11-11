@@ -1,3 +1,4 @@
+{{-- Halaman riwayat pemesanan tiket milik pengguna dengan navigasi atas disembunyikan (hide-nav="true") --}}
 <x-app-layout :hide-nav="true">
     <div class="py-10 px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto space-y-6">
@@ -7,12 +8,14 @@
                 <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
                     Riwayat Pemesanan
                 </h1>
+                {{-- Menggunakan wire:navigate agar perpindahan halaman Livewire terasa instan tanpa reload penuh --}}
                 <a href="{{ route('home') }}" wire:navigate 
                    class="brex-btn-secondary text-xs px-3.5 py-2 font-medium">
                     &larr; Beranda
                 </a>
             </div>
 
+            {{-- Kondisi jika pengguna belum memiliki riwayat tiket sama sekali --}}
             @if($tickets->isEmpty())
                 <div class="bg-white border border-brex-mist rounded-[16px] p-16 text-center">
                     <div class="w-12 h-12 mx-auto mb-4 flex items-center justify-center rounded-brex bg-brex-fog border border-brex-mist text-brex-ink font-bold text-lg">
@@ -26,9 +29,11 @@
                     </a>
                 </div>
             @else
+                {{-- Daftar kartu riwayat tiket jika koleksi $tickets memiliki data --}}
                 <div class="space-y-4">
                     @foreach($tickets as $ticket)
                         @php
+                            // Menentukan flag status tiket untuk mengatur tampilan tautan dan warna badge status
                             $isPaid = in_array($ticket->status, ['paid', 'boarded']);
                             $isPending = $ticket->status === 'pending';
                             $isExpired = in_array($ticket->status, ['expired', 'refunded']);
@@ -37,6 +42,7 @@
                         <div class="bg-white border border-gray-300/80 rounded-[16px] px-6 py-5 hover:border-gray-400 transition-all duration-150">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div class="space-y-1.5">
+                                    {{-- Judul rute hanya bisa diklik menuju e-tiket jika tiket sudah dibayar ($isPaid) --}}
                                     <a href="{{ $isPaid ? route('tickets.show', $ticket->id) : '#' }}" 
                                        class="flex items-center gap-2 text-base font-bold text-gray-900 tracking-tight hover:text-brex-ember transition-colors">
                                         <span>{{ $ticket->schedule->route->kota_asal }}</span>
@@ -44,6 +50,7 @@
                                         <span>{{ $ticket->schedule->route->kota_tujuan }}</span>
                                     </a>
 
+                                    {{-- Detail waktu keberangkatan, nomor kursi, dan identitas penumpang --}}
                                     <div class="flex flex-wrap items-center gap-2.5 text-xs text-gray-400 font-normal">
                                         <span>{{ \Carbon\Carbon::parse($ticket->schedule->waktu_berangkat)->format('d M Y, H:i') }} WIB</span>
                                         <span>·</span>
@@ -53,6 +60,7 @@
                                     </div>
                                 </div>
 
+                                {{-- Badge/tombol status tiket: PAID (buka e-tiket), PENDING (lanjutkan checkout), atau status lain --}}
                                 <div class="flex items-center gap-3 shrink-0">
                                     @if($isPaid)
                                         <a href="{{ route('tickets.show', $ticket->id) }}" wire:navigate
@@ -75,6 +83,7 @@
                     @endforeach
                 </div>
 
+                {{-- Tautan paginasi Laravel untuk berpindah halaman riwayat tiket --}}
                 <div class="mt-6 flex items-center justify-between">
                     <div>
                         {{ $tickets->links() }}

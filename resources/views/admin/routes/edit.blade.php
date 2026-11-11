@@ -1,5 +1,7 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman edit rute perjalanan --}}
 @section('title', 'Edit Rute Perjalanan')
 
 @section('content')
@@ -12,10 +14,12 @@
             Kembali ke Daftar Rute
         </a>
         <h1 class="text-2xl font-semibold text-brex-ink tracking-brex-24">Edit Rute Perjalanan</h1>
+        {{-- Menampilkan nama rute asal dan tujuan yang sedang diedit --}}
         <p class="text-sm text-brex-pewter mt-1">Perbarui informasi rute {{ $route->kota_asal }} - {{ $route->kota_tujuan }}.</p>
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Form pembaruan rute dikirim dengan metode PUT ke route admin.routes.update --}}
         <form action="{{ route('admin.routes.update', $route) }}" method="POST" class="space-y-5">
             @csrf
             @method('PUT')
@@ -24,6 +28,7 @@
                 <!-- Kota Asal -->
                 <div>
                     <label for="kota_asal" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Kota Asal</label>
+                    {{-- Mengisi nilai awal dari input lama jika validasi gagal, atau dari data $route --}}
                     <input type="text" name="kota_asal" id="kota_asal" value="{{ old('kota_asal', $route->kota_asal) }}" required
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                     @error('kota_asal')

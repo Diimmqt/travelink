@@ -1,5 +1,7 @@
+{{-- Menggunakan layout admin sebagai kerangka halaman --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman validasi boarding --}}
 @section('title', 'Validasi Boarding Tiket')
 
 @section('content')
@@ -10,14 +12,18 @@
     </div>
 
     <!-- Scan / Input Form Card -->
+    {{-- Kartu formulir input kode QR secara manual, scanner gun, atau kamera --}}
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
-        <form id="boarding-form" action="{{ route('admin.boarding.validate') }}" method="POST" class="space-y-4">
+        {{-- Menentukan route tujuan secara dinamis: gunakan route kasir jika diakses oleh akun kasir, atau route admin jika oleh admin --}}
+        <form id="boarding-form" action="{{ route(request()->routeIs('kasir.*') || (auth()->check() && auth()->user()->isKasir()) ? 'kasir.boarding.validate' : 'admin.boarding.validate') }}" method="POST" class="space-y-4">
+            {{-- Token keamanan CSRF wajib untuk pengiriman form POST di Laravel --}}
             @csrf
             <div>
                 <div class="flex items-center justify-between mb-2">
                     <label for="qr_token" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider">
                         Kode Unik / QR Token E-Ticket
                     </label>
+                    {{-- Tombol untuk membuka/menutup pemindai kamera QR Code --}}
                     <button type="button" id="btn-toggle-camera"
                         class="text-xs font-semibold text-brex-ember hover:text-[#e04f00] flex items-center gap-1.5 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,6 +35,7 @@
                 </div>
 
                 <!-- Interactive Camera Viewfinder Box -->
+                {{-- Kotak pratinjau kamera (tersembunyi secara default sampai tombol kamera diklik) --}}
                 <div id="camera-box" class="hidden mb-4 p-4 bg-brex-fog border border-dashed border-brex-mist rounded-brex text-center">
                     <div class="max-w-xs mx-auto overflow-hidden rounded-brex border border-brex-mist bg-black relative">
                         <div id="qr-reader" style="width: 100%;"></div>
@@ -37,6 +44,7 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3">
+                    {{-- Input kode token QR dengan autofocus agar petugas bisa langsung mengetik atau memindai --}}
                     <input type="text" name="qr_token" id="qr_token" required autofocus autocomplete="off"
                         placeholder="Contoh: 487C2BA8 atau scan QR Code..."
                         class="flex-1 bg-brex-paper border border-brex-mist rounded-brex px-4 py-3 text-brex-ink text-base focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel font-mono uppercase">
@@ -55,6 +63,7 @@
                     <span>Masukkan <strong>8 karakter kode unik</strong> yang ada di bawah QR tiket (contoh: <span class="font-mono text-brex-ink font-semibold">487C2BA8</span>), barcode scanner gun, atau klik tombol kamera.</span>
                 </p>
 
+                {{-- Menampilkan pesan error validasi input qr_token jika ada --}}
                 @error('qr_token')
                     <p class="text-xs text-rose-600 mt-2">{{ $message }}</p>
                 @enderror
@@ -63,12 +72,17 @@
     </div>
 
     <!-- Hasil Validasi (Conditional Result Card) -->
+    {{-- Tampilkan kartu hasil validasi apabila controller mengirimkan session 'validation_result' --}}
     @if(session('validation_result'))
-        @php $res = session('validation_result'); @endphp
+        @php
+            // Simpan data hasil validasi ke variabel $res agar lebih ringkas diakses
+            $res = session('validation_result');
+        @endphp
         <div class="rounded-brex p-6 border shadow-none transition-all {{ $res['success'] ? 'bg-emerald-50/50 border-emerald-300' : 'bg-rose-50/50 border-rose-300' }}">
             <div class="flex items-start justify-between gap-4">
                 <div class="flex items-start gap-4">
                     <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 {{ $res['success'] ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
+                        {{-- Tampilkan ikon centang jika validasi berhasil, atau ikon silang jika gagal --}}
                         @if($res['success'])
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -92,8 +106,12 @@
             </div>
 
             <!-- Tiket Details jika ditemukan -->
+            {{-- Jika objek tiket ditemukan, tampilkan detail penumpang, rute, kursi, titik jemput/turun, dan jam berangkat --}}
             @if(isset($res['ticket']) && $res['ticket'])
-                @php $t = $res['ticket']; @endphp
+                @php
+                    // Simpan objek tiket ke variabel $t untuk memudahkan pembacaan properti relasi
+                    $t = $res['ticket'];
+                @endphp
                 <div class="mt-6 pt-6 border-t border-brex-mist/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                         <span class="text-xs font-semibold text-brex-pewter uppercase block">Nama Penumpang</span>
@@ -128,6 +146,7 @@
     @endif
 
     <!-- Riwayat Logs Validasi -->
+    {{-- Tabel riwayat 15 pemindaian boarding terakhir yang dilakukan oleh petugas --}}
     <div class="bg-brex-paper border border-brex-mist rounded-brex shadow-none overflow-hidden">
         <div class="p-6 border-b border-brex-mist">
             <h2 class="text-lg font-semibold text-brex-ink tracking-brex-24">Riwayat Boarding Terakhir</h2>
@@ -146,6 +165,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-brex-mist text-sm text-brex-graphite">
+                    {{-- Looping setiap log pemindaian boarding --}}
                     @forelse ($recentLogs as $log)
                         <tr class="hover:bg-brex-fog/50 transition-colors">
                             <td class="py-4 px-6 text-xs text-brex-pewter font-mono">
@@ -165,6 +185,7 @@
                                 {{ $log->admin->nama ?? 'Admin' }}
                             </td>
                             <td class="py-4 px-6 text-right">
+                                {{-- Tampilkan badge hijau jika status scan 'accepted', selain itu badge merah --}}
                                 @if($log->result === 'accepted')
                                     <span class="px-2.5 py-1 text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-brex-chip">
                                         Diterima
@@ -189,16 +210,20 @@
     </div>
 </div>
 
+{{-- Memuat library html5-qrcode untuk memindai QR Code langsung melalui kamera browser --}}
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
+    // Variabel state untuk instance scanner QR dan status aktif/tidaknya kamera
     let html5QrCode = null;
     let cameraActive = false;
+    // Ambil referensi elemen DOM yang dibutuhkan untuk kontrol kamera dan form
     const btnToggle = document.getElementById('btn-toggle-camera');
     const btnText = document.getElementById('btn-camera-text');
     const cameraBox = document.getElementById('camera-box');
     const qrInput = document.getElementById('qr_token');
     const form = document.getElementById('boarding-form');
 
+    // Saat tombol kamera diklik, nyalakan kamera jika belum aktif atau matikan jika sedang aktif
     btnToggle.addEventListener('click', function () {
         if (!cameraActive) {
             startCamera();
@@ -207,19 +232,23 @@
         }
     });
 
+    // Fungsi untuk menampilkan kotak kamera dan memulai pemindaian QR Code
     function startCamera() {
         cameraBox.classList.remove('hidden');
         btnText.innerText = 'Tutup Kamera';
         cameraActive = true;
 
         html5QrCode = new Html5Qrcode("qr-reader");
+        // Konfigurasi kecepatan frame per detik (fps) dan ukuran area kotak pindai
         const config = { fps: 10, qrbox: { width: 220, height: 220 } };
 
+        // Gunakan kamera belakang ("environment") secara default jika tersedia
         html5QrCode.start(
             { facingMode: "environment" },
             config,
             (decodedText) => {
                 // Success scan
+                // Masukkan hasil bacaan QR ke input, hentikan kamera, lalu kirim form otomatis
                 qrInput.value = decodedText;
                 stopCamera();
                 form.submit();
@@ -228,11 +257,13 @@
                 // Scanning frame parse error (ignored during scan)
             }
         ).catch((err) => {
+            // Tampilkan peringatan jika browser menolak izin kamera atau kamera tidak ditemukan
             alert('Tidak dapat mengakses kamera: ' + err);
             stopCamera();
         });
     }
 
+    // Fungsi untuk menghentikan stream kamera, membersihkan reader, dan menyembunyikan kotak kamera
     function stopCamera() {
         if (html5QrCode) {
             html5QrCode.stop().then(() => {

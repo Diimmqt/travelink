@@ -1,5 +1,6 @@
 <?php
 
+// Mengembalikan konfigurasi pengiriman email (mailer bawaan, daftar transport, dan alamat pengirim global).
 return [
 
     /*
@@ -14,6 +15,7 @@ return [
     |
     */
 
+    // Mailer bawaan yang dipakai saat mengirim email (bawaan: 'log', yaitu menulis isi email ke file log untuk pengembangan lokal).
     'default' => env('MAIL_MAILER', 'log'),
 
     /*
@@ -34,8 +36,10 @@ return [
     |
     */
 
+    // Daftar konfigurasi berbagai layanan/metode pengiriman email yang didukung aplikasi.
     'mailers' => [
 
+        // Mengirim email melalui server SMTP menggunakan host, port, enkripsi, dan akun dari file .env.
         'smtp' => [
             'transport' => 'smtp',
             'url' => env('MAIL_URL'),
@@ -48,10 +52,12 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
 
+        // Mengirim email melalui layanan Amazon SES.
         'ses' => [
             'transport' => 'ses',
         ],
 
+        // Mengirim email melalui layanan Postmark.
         'postmark' => [
             'transport' => 'postmark',
             // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
@@ -60,20 +66,24 @@ return [
             // ],
         ],
 
+        // Mengirim email menggunakan program sendmail yang terpasang di server Linux/Unix.
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
         ],
 
+        // Tidak mengirim email sungguhan, melainkan mencatat isi email ke file log Laravel (aman untuk development).
         'log' => [
             'transport' => 'log',
             'channel' => env('MAIL_LOG_CHANNEL'),
         ],
 
+        // Menyimpan email hanya di array memori sementara (khusus untuk automated testing).
         'array' => [
             'transport' => 'array',
         ],
 
+        // Mode cadangan otomatis: mencoba kirim lewat 'smtp' dulu, jika gagal beralih ke 'log'.
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
@@ -95,6 +105,7 @@ return [
     |
     */
 
+    // Alamat email dan nama pengirim bawaan untuk semua email keluar jika tidak diatur secara khusus.
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),

@@ -1,7 +1,9 @@
 <?php
 
+// Mengimpor helper Str untuk membuat nama cookie session yang aman dari nama aplikasi.
 use Illuminate\Support\Str;
 
+// Mengembalikan konfigurasi pengelolaan session (penyimpanan status login & data sementara pengguna antar-request).
 return [
 
     /*
@@ -18,6 +20,7 @@ return [
     |
     */
 
+    // Driver penyimpanan session bawaan (bawaan: 'database').
     'driver' => env('SESSION_DRIVER', 'database'),
 
     /*

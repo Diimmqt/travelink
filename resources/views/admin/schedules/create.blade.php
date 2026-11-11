@@ -1,5 +1,7 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman tambah jadwal keberangkatan --}}
 @section('title', 'Tambah Jadwal Keberangkatan')
 
 @section('content')
@@ -16,12 +18,14 @@
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Mengirim form pembuatan jadwal ke route admin.schedules.store --}}
         <form action="{{ route('admin.schedules.store') }}" method="POST" class="space-y-5">
             @csrf
 
             <!-- Pilih Rute -->
             <div>
                 <label for="route_id" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Rute Perjalanan</label>
+                {{-- Dropdown daftar rute perjalanan yang tersedia --}}
                 <select name="route_id" id="route_id" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                     <option value="">-- Pilih Rute --</option>
                     @foreach($routes as $r)
@@ -38,6 +42,7 @@
             <!-- Pilih Armada -->
             <div>
                 <label for="vehicle_id" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Armada Kendaraan</label>
+                {{-- Dropdown memilih kendaraan; jumlah kursi jadwal akan dibuat otomatis sesuai kapasitas kendaraan --}}
                 <select name="vehicle_id" id="vehicle_id" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                     <option value="">-- Pilih Armada --</option>
                     @foreach($vehicles as $v)
@@ -56,6 +61,7 @@
                 <!-- Waktu Berangkat -->
                 <div>
                     <label for="waktu_berangkat" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Waktu Keberangkatan</label>
+                    {{-- Input tipe datetime-local untuk memilih tanggal sekaligus jam keberangkatan --}}
                     <input type="datetime-local" name="waktu_berangkat" id="waktu_berangkat" value="{{ old('waktu_berangkat') }}" required
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                     @error('waktu_berangkat')
@@ -66,6 +72,7 @@
                 <!-- Status -->
                 <div>
                     <label for="status" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Status Jadwal</label>
+                    {{-- Pilihan status operasional jadwal --}}
                     <select name="status" id="status" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                         <option value="scheduled" {{ old('status') == 'scheduled' ? 'selected' : '' }}>Scheduled (Terjadwal)</option>
                         <option value="ongoing" {{ old('status') == 'ongoing' ? 'selected' : '' }}>Ongoing (Dalam Perjalanan)</option>

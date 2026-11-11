@@ -1,5 +1,7 @@
+{{-- Kontainer utama halaman formulir data penumpang (Langkah 1 pemesanan) --}}
 <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
     <div class="brex-card p-6 md:p-8 max-w-2xl mx-auto space-y-6">
+        {{-- Bagian header: menampilkan judul langkah dan jumlah tiket yang akan dipesan --}}
         <div class="pb-4 border-b border-brex-mist flex items-start justify-between gap-4">
             <div>
                 <span class="text-xs font-semibold uppercase tracking-widest block mb-1 text-brex-ember">
@@ -12,11 +14,13 @@
                     Masukkan nama lengkap dan NIK sesuai kartu identitas (KTP) untuk setiap penumpang.
                 </p>
             </div>
+            {{-- Badge jumlah tiket dihitung dari banyaknya item dalam array $passengers --}}
             <span class="px-3 py-1 rounded-brex-chip bg-brex-fog border border-brex-mist text-xs font-semibold text-brex-ink shrink-0">
                 {{ count($passengers) }} Tiket
             </span>
         </div>
 
+        {{-- Menampilkan kotak pesan error jika terdapat flash session 'error' dari server --}}
         @if (session()->has('error'))
             <div class="p-4 rounded-brex flex items-center gap-3 text-xs font-medium bg-red-50 border border-red-200 text-red-600">
                 <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -26,8 +30,10 @@
             </div>
         @endif
 
+        {{-- Memastikan data jadwal ($schedule) tersedia sebelum menampilkan ringkasan dan formulir --}}
         @if($schedule)
             <!-- Schedule Summary Card -->
+            {{-- Kartu ringkasan jadwal terpilih (rute, waktu berangkat, armada, tarif, sisa kursi) --}}
             <div class="p-5 rounded-brex bg-brex-fog border border-brex-mist space-y-3">
                 <div class="flex items-center justify-between pb-3 border-b border-brex-mist">
                     <h3 class="text-xs font-semibold uppercase tracking-widest flex items-center gap-2 text-brex-pewter">
@@ -48,6 +54,7 @@
                     </div>
                     <div>
                         <span class="block uppercase tracking-wider mb-0.5 text-brex-pewter font-medium">Keberangkatan</span>
+                        {{-- Memformat tanggal & jam keberangkatan menggunakan Carbon dengan format lokal --}}
                         <span class="font-semibold text-sm text-brex-ink">{{ \Carbon\Carbon::parse($schedule->waktu_berangkat)->isoFormat('D MMM, HH:mm') }} WIB</span>
                     </div>
                     <div>
@@ -56,27 +63,33 @@
                     </div>
                     <div>
                         <span class="block uppercase tracking-wider mb-0.5 text-brex-pewter font-medium">Tarif Satuan</span>
+                        {{-- Memformat harga menjadi format Rupiah dengan pemisah ribuan titik --}}
                         <span class="font-semibold text-brex-ink">Rp {{ number_format($schedule->route->harga, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
 
             <!-- Form Penumpang -->
+            {{-- Formulir Livewire: wire:submit.prevent mencegah reload halaman dan memanggil method submitForm --}}
             <form wire:submit.prevent="submitForm" class="space-y-6 pt-2">
                 
                 <div class="space-y-4">
+                    {{-- Melakukan perulangan untuk setiap data penumpang dalam array $passengers --}}
                     @foreach($passengers as $index => $passenger)
+                        {{-- wire:key membantu Livewire melacak elemen DOM setiap kartu penumpang saat ditambah/dihapus --}}
                         <div class="p-5 rounded-brex bg-white border border-brex-mist space-y-4 relative" wire:key="passenger-{{ $index }}">
                             <div class="flex items-center justify-between pb-2 border-b border-brex-mist/70">
                                 <div class="flex items-center gap-2">
                                     <span class="w-6 h-6 rounded-full bg-brex-ember text-white flex items-center justify-center text-xs font-bold">
                                         {{ $index + 1 }}
                                     </span>
+                                    {{-- Penumpang pertama (index 0) ditandai sebagai Pemesan --}}
                                     <span class="text-xs font-semibold uppercase tracking-wider text-brex-ink">
                                         Penumpang {{ $index + 1 }} {{ $index === 0 ? '(Pemesan)' : '' }}
                                     </span>
                                 </div>
 
+                                {{-- Tombol hapus hanya ditampilkan jika jumlah penumpang lebih dari 1 (minimal harus ada 1 penumpang) --}}
                                 @if(count($passengers) > 1)
                                     <button type="button" wire:click="removePassenger({{ $index }})"
                                             class="text-xs text-red-600 hover:text-red-700 font-medium inline-flex items-center gap-1">
@@ -90,6 +103,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <!-- Nama Lengkap -->
+                                {{-- Input nama lengkap penumpang; wire:model.defer menyinkronkan data saat form dikirim --}}
                                 <div>
                                     <label class="block text-xs font-semibold uppercase tracking-widest text-brex-pewter mb-1.5">
                                         Nama Lengkap
@@ -97,12 +111,14 @@
                                     <input type="text" wire:model.defer="passengers.{{ $index }}.nama_lengkap"
                                         class="brex-input text-sm"
                                         placeholder="Contoh: Dimitar Bayanaka" />
+                                    {{-- Menampilkan pesan error validasi khusus untuk nama penumpang pada indeks ini --}}
                                     @error("passengers.{$index}.nama_lengkap")
                                         <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span>
                                     @enderror
                                 </div>
 
                                 <!-- NIK -->
+                                {{-- Input NIK 16 digit sesuai KTP penumpang --}}
                                 <div>
                                     <label class="block text-xs font-semibold uppercase tracking-widest text-brex-pewter mb-1.5">
                                         NIK (KTP)
@@ -111,6 +127,7 @@
                                         maxlength="16"
                                         class="brex-input text-sm font-mono"
                                         placeholder="16 Digit NIK KTP" />
+                                    {{-- Menampilkan pesan error validasi khusus untuk NIK penumpang pada indeks ini --}}
                                     @error("passengers.{$index}.nik")
                                         <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span>
                                     @enderror
@@ -120,6 +137,7 @@
                     @endforeach
                 </div>
 
+                {{-- Tombol tambah penumpang: hanya muncul jika jumlah penumpang belum mencapai batas (maksimal 6 atau sisa kursi tersedia) --}}
                 @if(count($passengers) < min(6, $availableSeats))
                     <button type="button" wire:click="addPassenger"
                             class="w-full py-3 border-2 border-dashed border-brex-mist hover:border-brex-ember hover:bg-brex-ember/5 text-xs font-semibold text-brex-ink rounded-brex transition-all flex items-center justify-center gap-2">
@@ -131,6 +149,7 @@
                 @endif
 
                 <!-- Total Estimasi -->
+                {{-- Bagian ringkasan total biaya tiket = harga satuan x jumlah penumpang --}}
                 <div class="p-4 rounded-brex bg-brex-fog border border-brex-mist flex items-center justify-between">
                     <div>
                         <span class="text-xs text-brex-pewter uppercase tracking-wider font-medium block">Total Biaya Tiket</span>
@@ -141,6 +160,7 @@
                     </span>
                 </div>
 
+                {{-- Tombol navigasi: kembali mencari jadwal lain atau lanjut ke pemilihan kursi --}}
                 <div class="flex items-center justify-between pt-4 border-t border-brex-mist">
                     <a href="{{ route('schedules.search') }}" wire:navigate 
                         class="brex-btn-secondary text-xs px-4 py-2.5 font-medium">

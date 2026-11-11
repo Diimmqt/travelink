@@ -1,5 +1,7 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman edit titik lokasi --}}
 @section('title', 'Edit Titik Lokasi')
 
 @section('content')
@@ -12,10 +14,12 @@
             Kembali ke Daftar Titik Lokasi
         </a>
         <h1 class="text-2xl font-semibold text-brex-ink tracking-brex-24">Edit Titik Lokasi</h1>
+        {{-- Menampilkan nama titik lokasi yang sedang diedit --}}
         <p class="text-sm text-brex-pewter mt-1">Perbarui informasi titik penjemputan/penurunan {{ $pickupPoint->nama_titik }}.</p>
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Form pembaruan titik lokasi dikirim ke route update menggunakan metode PUT --}}
         <form action="{{ route('admin.pickup-points.update', $pickupPoint) }}" method="POST" class="space-y-5">
             @csrf
             @method('PUT')
@@ -24,9 +28,11 @@
             <div>
                 <label for="kota" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Kota Lokasi</label>
                 <div class="relative">
+                    {{-- Input kota diisi dengan nilai input lama jika error, atau nilai $pickupPoint->kota dari database --}}
                     <input type="text" name="kota" id="kota" list="city-list" value="{{ old('kota', $pickupPoint->kota) }}" required
                         placeholder="Pilih atau ketik nama kota (contoh: Bandung, Jakarta, dsb.)"
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
+                    {{-- Daftar saran kota dari variabel $cities --}}
                     <datalist id="city-list">
                         @foreach($cities as $c)
                             <option value="{{ $c }}">
@@ -53,6 +59,7 @@
                 <!-- Tipe -->
                 <div>
                     <label for="tipe" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Tipe Titik</label>
+                    {{-- Menandai opsi <option> yang cocok dengan nilai old() atau data tersimpan sebagai selected --}}
                     <select name="tipe" id="tipe" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                         <option value="jemput" {{ old('tipe', $pickupPoint->tipe) == 'jemput' ? 'selected' : '' }}>Titik Penjemputan (Pickup)</option>
                         <option value="turun" {{ old('tipe', $pickupPoint->tipe) == 'turun' ? 'selected' : '' }}>Titik Penurunan (Dropoff)</option>

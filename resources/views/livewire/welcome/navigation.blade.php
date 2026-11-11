@@ -1,4 +1,6 @@
+{{-- Navigasi header untuk halaman welcome/landing page --}}
 <nav class="-mx-3 flex flex-1 justify-end">
+    {{-- Jika pengguna sudah login, tampilkan tombol menuju Beranda --}}
     @auth
         <a
             href="{{ route('home') }}"
@@ -6,6 +8,7 @@
         >
             Beranda
         </a>
+    {{-- Jika pengguna belum login (tamu), tampilkan tombol Log in dan Register --}}
     @else
         <a
             href="{{ route('login') }}"
@@ -14,6 +17,7 @@
             Log in
         </a>
 
+        {{-- Tampilkan tautan Register hanya jika rute registrasi tersedia --}}
         @if (Route::has('register'))
             <a
                 href="{{ route('register') }}"

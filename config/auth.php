@@ -1,5 +1,6 @@
 <?php
 
+// Mengembalikan konfigurasi autentikasi (login, guard, provider pengguna, dan reset password).
 return [
 
     /*
@@ -13,6 +14,7 @@ return [
     |
     */
 
+    // Menentukan guard autentikasi bawaan ('web') dan broker reset password bawaan ('users').
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
@@ -35,6 +37,7 @@ return [
     |
     */
 
+    // Daftar guard autentikasi; guard 'web' menyimpan status login pengguna menggunakan session dan mengambil data dari provider 'users'.
     'guards' => [
         'web' => [
             'driver' => 'session',
@@ -59,6 +62,7 @@ return [
     |
     */
 
+    // Sumber data pengguna (provider) yang dipakai untuk mengambil data user dari database via model Eloquent User.
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
@@ -90,6 +94,7 @@ return [
     |
     */
 
+    // Pengaturan fitur lupa/reset password: tabel penyimpanan token, masa berlaku token (60 menit), dan jeda permintaan ulang (60 detik).
     'passwords' => [
         'users' => [
             'provider' => 'users',
@@ -110,6 +115,7 @@ return [
     |
     */
 
+    // Lama waktu (dalam detik) sebelum pengguna diminta memasukkan ulang password pada halaman sensitif (bawaan 10800 detik = 3 jam).
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
 ];

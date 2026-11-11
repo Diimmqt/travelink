@@ -4,15 +4,20 @@ use Illuminate\Support\Facades\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
+// Komponen Volt untuk halaman lupa password dengan layout tamu (layouts.guest)
 new #[Layout('layouts.guest')] class extends Component
 {
+    // Properti email yang di-binding ke input formulir
     public string $email = '';
 
     /**
      * Send a password reset link to the provided email address.
+     *
+     * Memvalidasi alamat email lalu mengirimkan tautan reset password ke email tersebut.
      */
     public function sendPasswordResetLink(): void
     {
+        // Validasi format email dengan pesan error khusus berbahasa Indonesia
         $this->validate([
             'email' => ['required', 'string', 'email'],
         ], [
@@ -27,20 +32,25 @@ new #[Layout('layouts.guest')] class extends Component
             $this->only('email')
         );
 
+        // Jika pengiriman link reset gagal, tampilkan pesan status sebagai error pada field email
         if ($status != Password::RESET_LINK_SENT) {
             $this->addError('email', __($status));
 
             return;
         }
 
+        // Kosongkan input email setelah tautan reset berhasil dikirim
         $this->reset('email');
 
+        // Simpan pesan sukses di session flash untuk ditampilkan di komponen x-auth-session-status
         session()->flash('status', __($status));
     }
 }; ?>
 
+{{-- Layout halaman lupa password terbagi 2 kolom di layar besar: panel visual (kiri) dan form (kanan) --}}
 <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
     <!-- Left Column: Travel Visual Panel (Hidden on mobile) -->
+    {{-- Kolom kiri: panel informasi keamanan pemulihan akun (disembunyikan pada layar kecil/mobile) --}}
     <div class="hidden lg:flex lg:col-span-7 bg-brand-navy-950 text-white relative overflow-hidden flex-col justify-between p-16">
         <!-- Abstract glowing gradient orbs -->
         <div class="absolute inset-0 bg-gradient-to-tr from-brand-navy-950 via-brand-navy-900 to-indigo-950"></div>
@@ -80,6 +90,7 @@ new #[Layout('layouts.guest')] class extends Component
     </div>
 
     <!-- Right Column: Minimalist Clean Forgot Password Form -->
+    {{-- Kolom kanan: formulir input email untuk meminta tautan reset password --}}
     <div class="lg:col-span-5 flex flex-col justify-center px-8 sm:px-16 py-12 bg-white">
         <div class="max-w-md w-full mx-auto">
             <div class="flex items-center gap-2 lg:hidden mb-8">
@@ -92,8 +103,10 @@ new #[Layout('layouts.guest')] class extends Component
             </p>
 
             <!-- Session Status -->
+            {{-- Menampilkan pesan status sukses jika tautan reset berhasil dikirim --}}
             <x-auth-session-status class="mb-6" :status="session('status')" />
 
+            {{-- Form memanggil method sendPasswordResetLink saat dikirim --}}
             <form wire:submit="sendPasswordResetLink" class="space-y-5">
                 <!-- Email Address -->
                 <div>
@@ -105,6 +118,7 @@ new #[Layout('layouts.guest')] class extends Component
                 </div>
 
                 <!-- Submit Button -->
+                {{-- Tombol kirim tautan reset dengan indikator loading selama proses pengiriman berlangsung --}}
                 <button type="submit" 
                     wire:loading.attr="disabled"
                     class="w-full py-3.5 px-4 bg-brand-navy-950 hover:bg-brand-navy-900 active:bg-brand-navy-800 text-white font-bold rounded-xl shadow-lg shadow-brand-navy-950/10 hover:shadow-xl transition duration-150 flex items-center justify-center gap-2 group cursor-pointer">
@@ -124,6 +138,7 @@ new #[Layout('layouts.guest')] class extends Component
                 </button>
             </form>
 
+            {{-- Tautan kembali ke halaman login --}}
             <div class="mt-8 text-center text-sm text-brand-navy-500">
                 Ingat kata sandi Anda? 
                 <a href="{{ route('login') }}" class="font-bold text-brand-amber-600 hover:text-brand-amber-700 transition" wire:navigate>

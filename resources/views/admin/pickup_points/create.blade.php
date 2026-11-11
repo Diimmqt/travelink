@@ -1,10 +1,13 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman tambah titik lokasi --}}
 @section('title', 'Tambah Titik Lokasi')
 
 @section('content')
 <div class="max-w-2xl space-y-6">
     <div>
+        {{-- Link navigasi kembali ke halaman daftar titik jemput/turun --}}
         <a href="{{ route('admin.pickup-points.index') }}" class="inline-flex items-center gap-1.5 text-xs text-brex-pewter hover:text-brex-ink transition-colors mb-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -16,6 +19,7 @@
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Mengirim form dengan metode POST ke route admin.pickup-points.store untuk menyimpan titik baru --}}
         <form action="{{ route('admin.pickup-points.store') }}" method="POST" class="space-y-5">
             @csrf
 
@@ -23,9 +27,11 @@
             <div>
                 <label for="kota" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Kota Lokasi</label>
                 <div class="relative">
+                    {{-- Input teks yang terhubung ke <datalist id="city-list"> untuk saran nama kota --}}
                     <input type="text" name="kota" id="kota" list="city-list" value="{{ old('kota') }}" required
                         placeholder="Pilih atau ketik nama kota (contoh: Bandung, Jakarta, dsb.)"
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
+                    {{-- Daftar saran kota yang diambil dari variabel $cities --}}
                     <datalist id="city-list">
                         @foreach($cities as $c)
                             <option value="{{ $c }}">
@@ -33,6 +39,7 @@
                     </datalist>
                 </div>
                 <p class="text-[11px] text-brex-pewter mt-1">Titik ini akan otomatis muncul pada setiap rute perjalanan yang melewati kota ini.</p>
+                {{-- Menampilkan error validasi untuk field kota --}}
                 @error('kota')
                     <p class="text-xs text-rose-600 mt-1">{{ $message }}</p>
                 @enderror
@@ -52,6 +59,7 @@
                 <!-- Tipe -->
                 <div>
                     <label for="tipe" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Tipe Titik</label>
+                    {{-- Dropdown memilih fungsi lokasi: hanya jemput, hanya turun, atau keduanya --}}
                     <select name="tipe" id="tipe" required class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember">
                         <option value="jemput" {{ old('tipe') == 'jemput' ? 'selected' : '' }}>Titik Penjemputan (Pickup)</option>
                         <option value="turun" {{ old('tipe') == 'turun' ? 'selected' : '' }}>Titik Penurunan (Dropoff)</option>

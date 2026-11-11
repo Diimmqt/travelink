@@ -1,5 +1,7 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman edit armada kendaraan --}}
 @section('title', 'Edit Armada Kendaraan')
 
 @section('content')
@@ -12,10 +14,12 @@
             Kembali ke Daftar Armada
         </a>
         <h1 class="text-2xl font-semibold text-brex-ink tracking-brex-24">Edit Armada Kendaraan</h1>
+        {{-- Menampilkan plat nomor armada yang sedang diubah --}}
         <p class="text-sm text-brex-pewter mt-1">Perbarui informasi plat nomor {{ $vehicle->plat_nomor }}.</p>
     </div>
 
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-6 shadow-none">
+        {{-- Mengirim perubahan data armada dengan metode PUT ke route admin.vehicles.update --}}
         <form action="{{ route('admin.vehicles.update', $vehicle) }}" method="POST" class="space-y-5">
             @csrf
             @method('PUT')
@@ -24,6 +28,7 @@
                 <!-- Jenis Kendaraan -->
                 <div>
                     <label for="jenis" class="block text-xs font-semibold text-brex-ink uppercase tracking-wider mb-2">Jenis Kendaraan</label>
+                    {{-- Mengisi nilai field dari input sebelumnya jika validasi gagal, atau dari data $vehicle --}}
                     <input type="text" name="jenis" id="jenis" value="{{ old('jenis', $vehicle->jenis) }}" required placeholder="Contoh: Toyota Hiace, Isuzu Elf, dsb."
                         class="w-full bg-brex-paper border border-brex-mist rounded-brex px-3.5 py-2.5 text-brex-ink text-sm focus:outline-none focus:border-brex-ember focus:ring-1 focus:ring-brex-ember placeholder-brex-steel">
                     @error('jenis')

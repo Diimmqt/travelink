@@ -1,5 +1,7 @@
+{{-- Menggunakan kerangka layout admin --}}
 @extends('layouts.admin')
 
+{{-- Menentukan judul halaman daftar jadwal keberangkatan --}}
 @section('title', 'Data Jadwal Keberangkatan')
 
 @section('content')
@@ -9,6 +11,7 @@
             <h1 class="text-2xl font-semibold text-brex-ink tracking-brex-24">Kelola Jadwal Keberangkatan</h1>
             <p class="text-sm text-brex-pewter mt-1">Atur jadwal keberangkatan shuttle, penetapan armada, dan ketersediaan kursi.</p>
         </div>
+        {{-- Tombol menuju halaman pembuatan jadwal keberangkatan baru --}}
         <a href="{{ route('admin.schedules.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brex-ember text-white text-sm font-medium rounded-brex hover:bg-[#e04f00] transition duration-150 shadow-none">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -18,6 +21,7 @@
     </div>
 
     <!-- Filter Section -->
+    {{-- Form GET untuk menyaring jadwal berdasarkan rute perjalanan dan status jadwal --}}
     <div class="bg-brex-paper border border-brex-mist rounded-brex p-4 shadow-none">
         <form method="GET" action="{{ route('admin.schedules.index') }}" class="flex flex-wrap items-center gap-4">
             <div>
@@ -66,8 +70,10 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-brex-mist text-sm text-brex-graphite">
+                    {{-- Looping setiap jadwal keberangkatan --}}
                     @forelse ($schedules as $schedule)
                         @php
+                            // Hitung jumlah kursi yang benar-benar masih tersedia (berdasarkan effective_status) dan total seluruh kursi
                             $availableSeatsCount = $schedule->seats->filter(fn($s) => $s->effective_status === 'available')->count();
                             $totalSeatsCount = $schedule->seats->count();
                         @endphp
@@ -76,6 +82,7 @@
                                 {{ $schedule->route ? $schedule->route->kota_asal . ' - ' . $schedule->route->kota_tujuan : '-' }}
                             </td>
                             <td class="py-4 px-6 font-medium text-brex-ink">
+                                {{-- Tampilkan tanggal keberangkatan yang diformat ke bahasa lokal lalu jamnya --}}
                                 <div>{{ \Carbon\Carbon::parse($schedule->waktu_berangkat)->translatedFormat('d M Y') }}</div>
                                 <div class="text-xs text-brex-pewter font-semibold">{{ \Carbon\Carbon::parse($schedule->waktu_berangkat)->format('H:i') }} WIB</div>
                             </td>
@@ -89,6 +96,7 @@
                                 </span>
                             </td>
                             <td class="py-4 px-6">
+                                {{-- Tampilkan badge warna sesuai status operasional jadwal --}}
                                 @if($schedule->status === 'scheduled')
                                     <span class="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-brex-chip">Scheduled</span>
                                 @elseif($schedule->status === 'ongoing')
@@ -103,6 +111,7 @@
                                 <a href="{{ route('admin.schedules.edit', $schedule) }}" class="inline-flex items-center px-3 py-1.5 border border-brex-mist text-xs font-medium text-brex-ink rounded-brex hover:bg-brex-fog transition-colors">
                                     Edit
                                 </a>
+                                {{-- Form hapus jadwal beserta seluruh data kursinya setelah konfirmasi --}}
                                 <form action="{{ route('admin.schedules.destroy', $schedule) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus jadwal ini beserta kursi terkait?')">
                                     @csrf
                                     @method('DELETE')
@@ -122,6 +131,7 @@
                 </tbody>
             </table>
         </div>
+        {{-- Menampilkan paginasi halaman apabila data jadwal melebihi satu halaman --}}
         @if ($schedules->hasPages())
             <div class="p-4 border-t border-brex-mist bg-brex-fog/30">
                 {{ $schedules->links() }}
